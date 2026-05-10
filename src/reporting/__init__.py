@@ -1,1 +1,4 @@
-"""Reporting module containing ReportManager, StatisticalAnalyzer and ExplainabilityEngine."""
+"""Reporting module.
+
+Contains ReportManager, StatisticalAnalyzer and ExplainabilityEngine.
+"""
