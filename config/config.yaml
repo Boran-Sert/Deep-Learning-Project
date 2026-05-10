@@ -1,0 +1,17 @@
+project:
+  name: "Deep Learning Anomaly Detection"
+  seeds: [42, 123, 2026, 7, 999]
+
+training:
+  batch_size: 32
+  epoch: 50
+  patience: 5
+
+automata:
+  window_size: 3 # 3, 4, 5, 6
+  alphabet_size: 3 # 3, 4, 5, 6
+
+paths:
+  data_raw: "data_raw"
+  artifacts: "artifacts"
+  logs: "logs"

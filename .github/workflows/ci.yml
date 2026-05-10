@@ -1,0 +1,42 @@
+name: YAZLAB 2 CI Pipeline
+
+on:
+  push:
+    branches: [ "main", "master", "dev" ]
+  pull_request:
+    branches: [ "main", "master", "dev" ]
+
+jobs:
+  build-and-lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+        cache: "pip"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install ruff pytest
+        # Sadece testler ve linting için gerekli olanları yüklüyoruz. 
+        # Modelleri test etmek isterseniz 'pip install -r requirements.txt' kullanın.
+
+    - name: Lint code with Ruff
+      run: |
+        ruff check .
+        ruff format --check .
+
+    - name: Run Tests
+      run: |
+        # test klasörü varsa pytest çalıştırılır
+        if [ -d "tests" ]; then
+          pytest tests/
+        else
+          echo "Test klasörü henüz bulunamadı, atlanıyor."
+        fi
