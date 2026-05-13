@@ -1,17 +1,24 @@
 project:
-  name: "Deep Learning Anomaly Detection"
-  seeds: [42, 123, 2026, 7, 999]
+  name: "Time Series Anomaly Detection"
+  version: "1.0.0"
 
-training:
+paths:
+  data_dir: "data"
+  skab_valve1: "data/valve1"
+  skab_valve2: "data/valve2"
+  batadal_train: "data/BATADAL_dataset03.csv"
+  batadal_test: "data/BATADAL_dataset04.csv"
+  artifacts_dir: "artifacts"
+  logs_dir: "logs"
+
+experiment:
+  random_seeds: [42, 123, 2026, 7, 999]
+
+deep_learning:
   batch_size: 32
-  epoch: 50
+  epochs: 50
   patience: 5
 
 automata:
-  window_size: 3 # 3, 4, 5, 6
-  alphabet_size: 3 # 3, 4, 5, 6
-
-paths:
-  data_raw: "data_raw"
-  artifacts: "artifacts"
-  logs: "logs"
+  window_size: 5  # Default, will be tuned in param search
+  alphabet_size: 5 # Default, will be tuned in param search

@@ -1,1 +1,1 @@
-"""Source code root module."""
+# Source code initialization
