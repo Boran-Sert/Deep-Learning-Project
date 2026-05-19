@@ -19,7 +19,19 @@ deep_learning:
   batch_size: 32
   epochs: 50
   patience: 5
+  learning_rate: 0.001
+  window_size: 10
+  models: ["cnn", "gru"]
+  cnn:
+    num_filters_1: 64
+    num_filters_2: 128
+    kernel_size: 3
+  gru:
+    hidden_size: 64
+    num_layers: 2
+    dropout: 0.2
 
 automata:
-  window_size: 5  # Default, will be tuned in param search
+  window_size: 5  # SAX window size, can be different from DL
   alphabet_size: 5 # Default, will be tuned in param search
+  threshold: 0.5   # Anomaly confidence score threshold
