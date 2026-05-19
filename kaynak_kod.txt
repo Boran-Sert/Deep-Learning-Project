@@ -1,0 +1,1467 @@
+Klasör Ağacı:
+=============
+Deep-Learning-Project/
+├── .gitignore
+├── README.md
+├── config
+│   └── config.yaml
+├── plan.md
+├── pyproject.toml
+├── requirements.txt
+├── src
+│   ├── __init__.py
+│   ├── core
+│   │   ├── __init__.py
+│   │   ├── artifact_manager.py
+│   │   ├── config_manager.py
+│   │   └── runtime_logger.py
+│   ├── models
+│   │   ├── __init__.py
+│   │   ├── automata
+│   │   │   ├── __init__.py
+│   │   │   ├── detector.py
+│   │   │   ├── paa.py
+│   │   │   ├── sax.py
+│   │   │   ├── sliding_window.py
+│   │   │   └── vocabulary.py
+│   │   ├── base.py
+│   │   └── deep_learning
+│   │       ├── __init__.py
+│   │       ├── adapter.py
+│   │       ├── cnn.py
+│   │       ├── dataset.py
+│   │       ├── factory.py
+│   │       └── gru.py
+│   ├── orchestration
+│   │   └── __init__.py
+│   ├── reporting
+│   │   └── __init__.py
+│   ├── utils
+│   └── visualization
+│       └── __init__.py
+└── tests
+    ├── __init__.py
+    └── test_environment.py
+
+================================================================================
+
+Dosya: README.md
+----------------
+# Deep Learning Anomaly Detection
+
+Bu proje, zaman serisi anomali tespiti için Siyah Kutu (Deep Learning) ve Açıklanabilir (Otomata) modelleri karşılaştırmayı amaçlamaktadır. Proje, SOLID ve Nesne Yönelimli Programlama (OOP) prensiplerine sadık kalınarak geliştirilmiştir.
+
+## Geliştirme Ortamı Kurulumu
+
+Bu proje grup çalışmasına uygun şekilde standartlaştırılmıştır. Çakışmaları ve format farklılıklarını önlemek için aşağıdaki adımları takip ederek geliştirme ortamınızı kurun.
+
+### 1. Virtual Environment (Sanal Ortam) Oluşturma ve Aktifleştirme
+Projeyi klonladıktan sonra bir Python sanal ortamı oluşturun:
+
+**Windows için:**
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
+
+**macOS/Linux için:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 2. Bağımlılıkların Yüklenmesi
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### 3. Kod Formatlama ve Linting (Ruff)
+Projede kod formatlayıcı ve linter olarak **Ruff** kullanılmaktadır. Ayarlar `pyproject.toml` ve `.vscode/settings.json` içinde tanımlıdır. VSCode kullanıyorsanız dosyayı kaydettiğinizde otomatik olarak çalışacaktır. Manuel çalıştırmak için:
+```bash
+ruff check .
+ruff format .
+```
+
+### 4. Testleri Çalıştırma
+Projede test yazmak ve çalıştırmak için **pytest** kullanılmaktadır. GitHub Actions (CI) sürecinden geçebilmesi için testlerin başarılı olması gereklidir:
+```bash
+pytest
+```
+
+## Proje Klasör Yapısı
+* `src/`: Ana kaynak kod (core, data, models, orchestration, reporting, visualization modülleri).
+* `tests/`: Pytest ile yazılmış birim testleri.
+* `config/`: Hard-coded değerleri engellemek için tüm parametrelerin bulunduğu konfigürasyon dosyaları.
+* `venv/`: (Git tarafından yoksayılır) Python sanal ortamı.
+* `data_raw/`: (Git tarafından yoksayılır) SKAB ve BATADAL veri setleri.
+
+Herhangi bir sorun yaşarsanız `ci.yml` (GitHub Actions) çıktılarını kontrol edin ve testleri lokalinizde başarıyla geçirdiğinizden emin olun.
+
+
+================================================================================
+
+Dosya: config\config.yaml
+-------------------------
+project:
+  name: "Time Series Anomaly Detection"
+  version: "1.0.0"
+
+paths:
+  data_dir: "data"
+  raw_data_dir: "data/raw"
+  skab_valve1: "data/raw/SKAB-master/data/valve1"
+  skab_valve2: "data/raw/SKAB-master/data/valve2"
+  batadal_dataset: "data/raw/BATADAL_dataset04.csv"
+  artifacts_dir: "artifacts"
+  logs_dir: "logs"
+
+experiment:
+  random_seeds: [42, 123, 2026, 7, 999]
+  k_folds: 5
+
+deep_learning:
+  batch_size: 32
+  epochs: 50
+  patience: 5
+  learning_rate: 0.001
+  window_size: 10
+  models: ["cnn", "gru"]
+  cnn:
+    num_filters_1: 64
+    num_filters_2: 128
+    kernel_size: 3
+  gru:
+    hidden_size: 64
+    num_layers: 2
+    dropout: 0.2
+
+automata:
+  window_size: 5  # SAX window size, can be different from DL
+  alphabet_size: 5 # Default, will be tuned in param search
+  threshold: 0.5   # Anomaly confidence score threshold
+
+
+================================================================================
+
+Dosya: plan.md
+--------------
+# YAZLAB 2: ZAMAN SERİSİ ANOMALİ TESPİTİ - GELİŞTİRİCİ ASİSTAN PROMPTU
+
+## ROL VE GÖREV TANIMI
+Sen "Senior Software Architect" ve "Machine Learning Engineer" rollerini üstlenen profesyonel bir yapay zeka asistanısın. Görevin, zaman serisi verileri üzerinde Siyah Kutu (Deep Learning) ve Açıklanabilir (Olasılıksal Otomata) modelleri karşılaştıran bir anomali tespiti projesini sıfırdan kodlamaktır.
+
+## KESİN YAZILIM KURALLARI (STRICT RULES)
+* Tüm kodlama süreçlerinde kesinlikle SOLID ve Nesne Yönelimli Programlama (OOP) prensiplerine uyulacaktır.
+* Kod içinde hiçbir "hard-coded" (sabit) değer kullanılmayacaktır. Tüm değerler merkezi konfigürasyondan okunacaktır.
+* Veri sızıntısını (Data Leakage) önlemek için normalizasyon ve PCA gibi durum tutan (stateful) nesneler sadece "Train" verisinde "fit" edilecek, diğer setlerde "transform" edilecektir.
+* Modeller 5 farklı random seed ile (42, 123, 2026, 7, 999) eğitilecek ve test edilecektir.
+* Deep Learning modellerinde PyTorch kullanılacak, "Sliding Window" işlemleri PyTorch `Dataset` sınıfları içinde çözülecektir.
+* Tasarım Desenleri (Design Patterns) aktif olarak kullanılacaktır (Factory, Strategy, Observer, Adapter, Pipeline).
+
+## MİMARİ BİLEŞENLER VE GELİŞTİRME FAZLARI
+
+### FAZ 1: MERKEZİ YÖNETİM VE ALTYAPI (Foundation)
+* **ConfigurationManager (Singleton Pattern):** Projedeki tüm parametreleri (dosya yolları, batch_size=32, epoch=50, patience=5, window_size, alphabet_size) yönetecek sınıftır.
+* **ExperimentArtifactManager:** Veri sızıntısını önlemek ve tekrar üretilebilirliği sağlamak için eğitilmiş `Scaler`, `PCA` nesnelerini ve SAX sözlüğünü (.joblib veya .json formatında) diske yazıp/okuyacak sınıftır.
+* **RuntimeLogger:** Modellerin eğitim (Training Time) ve çıkarım (Inference Time) sürelerini saniye cinsinden ölçüp kaydedecek zaman takibi aracıdır.
+
+### FAZ 2: VERİ BORU HATTI (Data Pipeline & Preprocessing)
+* **IDataLoader (Factory Pattern):** Veri setlerini yükleyen arayüz.
+  * `SkabLoader`: SKAB veri setindeki `valve1` ve `valve2` klasörlerindeki `.csv` dosyalarını birleştirecek, `source_group` ve `source_file` sütunlarını metadata olarak ekleyecektir. Hedef değişken `anomaly` olacaktır.
+  * `BatadalLoader`: BATADAL veri setini yükleyecek, **yalnızca Training Dataset 2** kullanılacaktır (Training 1 ve Test Dataset hariç tutulacaktır). Zaman sütunu indeks olarak ayrılacaktır.
+* **ISplitStrategy (Strategy Pattern):** Veri bölme stratejilerini yönetecek arayüz.
+  * `SkabGroupFoldStrategy`: `source_file` baz alınarak `GroupKFold` uygulayacaktır. Aynı dosya train ve testte aynı anda olamaz.
+  * `BatadalTemporalSplitStrategy`: Zaman sırası bozulmadan yüzde 60 Train, yüzde 20 Validation, yüzde 20 Test bölmesi yapacaktır. Rastgele bölme yasaktır.
+* **Preprocessor Pipeline:** Eksik veri yönetimi, Normalizasyon ve PCA (Otomata için sadece PC1) işlemlerini zincirleme yürütecek, ArtifactManager ile entegre çalışacaktır.
+
+### FAZ 3: MODELLEME KATMANI (Adapter & Pipeline Patterns)
+* **IAnomalyDetector (Arayüz):** Tüm modellerin ortak sözleşmesi (`BuildModel`, `Train`, `Predict`).
+* **DeepLearning Katmanı:** PyTorch kullanılarak Adapter pattern ile sisteme entegre edilecektir. Modeller, Factory pattern ile (örneğin `DeepLearningFactory`) ayağa kaldırılacaktır. Kullanımı ve eğitimi nispeten daha hızlı/kolay olan **1D-CNN** ve **GRU** modelleri seçilmiştir. PyTorch `Dataset` kullanılarak 3 boyutlu tensör dönüşümü çalışma anında yapılacaktır.
+* **Automata Katmanı:** Tek bir dev sınıf yerine Pipeline mantığı ile tasarlanacaktır. `PAATransformer` -> `SAXTransformer` -> `SlidingWindowExtractor` sınıfları birbirine bağlanacaktır.
+* **VocabularyManager & Unseen Handler:** SAX dönüşümünden çıkan kelimeleri yönetecek sınıftır. Gelen örüntü sözlükte yoksa (Unseen), Levenshtein (Edit Distance) algoritması ile en yakın duruma haritalayacaktır.
+
+### FAZ 4: DENEY ORKESTRASYONU (Orchestrator)
+* **ExperimentOrchestrator:** Eğitimi sadece bir kez temiz veriyle yapacak, ardından test aşamasını şu senaryolarda koşturacaktır:
+  1. **Orijinal Veri Senaryosu**
+  2. **Gaussian Noise (Gürültülü) Veri Senaryosu**
+  3. **Unseen Pattern Senaryosu**
+  4. **Cross-Dataset Senaryosu:** Modelin bir veri setinde eğitilip diğerinde test edilmesiyle genellenebilirliğin ölçülmesi (EK Tablo 3 formatı).
+  5. **Parametre Duyarlılık Senaryosu (Grid Search):** Otomata için Window Size (3, 4, 5, 6) ve Alphabet Size (3, 4, 5, 6) parametreleri değiştirilerek; performans, state sayısı ve geçiş yoğunluğuna etkisi test edilecektir.
+
+### FAZ 5: OLAY GÜDÜMLÜ RAPORLAMA, İSTATİSTİK VE AÇIKLANABİLİRLİK (Reporting & Explainability)
+* **Event-Driven Mimari:** Orkestratör ve Modeller sonuçları "return" etmek yerine Event (olay) fırlatacaktır (`ModelTrainedEvent`, `AutomataDecisionEvent`).
+* **ReportManager (Observer):** F1, Accuracy, Precision, Recall metriklerinin ortalama ve standart sapmasını (5 farklı seed için) hesaplayacaktır. Ayrıca Tablo 5 formatında (Runtime) süreleri toplayacaktır.
+* **StatisticalAnalyzer:** Modeller arası farklar için Wilcoxon/McNemar testlerini uygulayacaktır.
+* **ExplainabilityEngine:** Otomata modeli için her karar adımında JSON formatında rapor üretecektir (`time_step`, `state`, `pattern`, `status`, `mapped_to`, `probability` ve `decision`). Model kararı için geçiş olasılıklarından türetilen bir **Güven Skoru (Confidence Score)** hesaplanacaktır. Opsiyonel ek puan için "Benzerlik Tabanlı Mesafe Açıklaması" ve "Counterfactual (Karşıt Durum)" analizleri sisteme entegre edilecektir.
+
+### FAZ 6: GÖRSELLEŞTİRME KATMANI (VisualizationManager)
+* **VisualizationManager:** Proje yönergesinde zorunlu tutulan rapor görsellerini Python (Matplotlib/Seaborn vb.) ile otomatik çizecek modüldür. Şu çıktıları üretecektir:
+  - Confusion Matrix
+  - ROC veya Precision-Recall Eğrisi
+  - Automata State Diagram (Durum geçiş diyagramı)
+  - Transition Probability Heatmap (Geçiş olasılıkları ısı haritası)
+  - Parametre Duyarlılık Grafikleri
+
+================================================================================
+
+Dosya: pyproject.toml
+---------------------
+[project]
+name = "deep-learning-project"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+[tool.pyright]
+pythonVersion = "3.11"
+pythonPlatform = "Windows"
+venvPath = "."
+venv = "venv"
+extraPaths = ["."]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "B"]
+ignore = []
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+
+================================================================================
+
+Dosya: requirements.txt
+-----------------------
+# Deep Learning
+torch>=2.0.0
+torchvision
+torchaudio
+
+# Data Manipulation & Machine Learning
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# Statistical Analysis
+scipy>=1.10.0
+statsmodels>=0.14.0
+
+# Config
+pyyaml>=6.0.1
+joblib>=1.3.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Code Quality & Testing (Group Work)
+pytest>=7.4.0
+ruff>=0.1.0
+
+
+================================================================================
+
+Dosya: src\__init__.py
+----------------------
+# Source code initialization
+
+
+================================================================================
+
+Dosya: src\core\__init__.py
+---------------------------
+# Core module initialization
+from .artifact_manager import ExperimentArtifactManager
+from .config_manager import ConfigurationManager
+from .runtime_logger import RuntimeLogger
+
+__all__ = ["ConfigurationManager", "ExperimentArtifactManager", "RuntimeLogger"]
+
+
+================================================================================
+
+Dosya: src\core\artifact_manager.py
+-----------------------------------
+import json
+import os
+from typing import Any
+
+import joblib
+
+from .config_manager import ConfigurationManager
+
+
+class ExperimentArtifactManager:
+    """
+    Veri sızıntısını (Data Leakage) önlemek ve tekrar üretilebilirliği sağlamak için
+    eğitilmiş (fit edilmiş) Scaler, PCA gibi nesneleri ve sözlükleri diske kaydedip
+    okuyan yöneticidir.
+    """
+
+    def __init__(self, experiment_id: str = "default"):
+        """
+        Args:
+            experiment_id (str): Kaydedilecek dosyalarda kullanılacak benzersiz deney
+            veya seed numarası.
+        """
+        self.config = ConfigurationManager()
+        self.artifacts_dir = self.config.get("paths.artifacts_dir", "artifacts")
+
+        # Proje kök dizinini bul ve tam dosya yolunu (absolute path) hesapla
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(current_dir))
+        self.artifacts_path = os.path.join(project_root, self.artifacts_dir)
+
+        self.experiment_id = str(experiment_id)
+
+        # artifacts klasörü yoksa oluştur
+        if not os.path.exists(self.artifacts_path):
+            os.makedirs(self.artifacts_path, exist_ok=True)
+
+    def _get_file_path(self, artifact_name: str, extension: str) -> str:
+        """Nesnenin diske kaydedileceği tam dosya yolunu üretir."""
+        file_name = f"{artifact_name}_exp_{self.experiment_id}.{extension}"
+        return os.path.join(self.artifacts_path, file_name)
+
+    def save_artifact(self, artifact: Any, artifact_name: str) -> None:
+        """
+        Makine öğrenmesi nesnelerini (Scaler, PCA vb.) .joblib formatında kaydeder.
+
+        Args:
+            artifact (Any): Kaydedilecek obje (ör: StandardScaler nesnesi)
+            artifact_name (str): Objenin adı (ör: 'scaler', 'pca')
+        """
+        file_path = self._get_file_path(artifact_name, "joblib")
+        joblib.dump(artifact, file_path)
+
+    def load_artifact(self, artifact_name: str) -> Any:
+        """
+        Daha önceden .joblib ile kaydedilmiş nesneyi diskten okuyup geri döner.
+        """
+        file_path = self._get_file_path(artifact_name, "joblib")
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"İstenen artifact bulunamadı: {file_path}")
+        return joblib.load(file_path)
+
+    def save_dict_artifact(self, data_dict: dict, artifact_name: str) -> None:
+        """
+        Sözlük gibi yapıları (ör: SAX vocabulary) .json formatında kaydeder.
+        """
+        file_path = self._get_file_path(artifact_name, "json")
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data_dict, f, indent=4)
+
+    def load_dict_artifact(self, artifact_name: str) -> dict:
+        """
+        Daha önceden .json formatında kaydedilmiş sözlük vb. yapıları diskten okur.
+        """
+        file_path = self._get_file_path(artifact_name, "json")
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"İstenen JSON artifact bulunamadı: {file_path}")
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+
+================================================================================
+
+Dosya: src\core\config_manager.py
+---------------------------------
+import os
+from typing import Any, Dict
+
+import yaml
+
+
+class ConfigurationManager:
+    """
+    Singleton ConfigurationManager sınıfı.
+    Projeye ait tüm konfigürasyonları yükler ve hardcoded (sabit) değer kullanımını
+    önlemek için erişim sağlar.
+    """
+
+    _instance = None
+    _config: Dict[str, Any] = {}
+
+    def __new__(cls, config_path: str = "config/config.yaml"):
+        if cls._instance is None:
+            cls._instance = super(ConfigurationManager, cls).__new__(cls)
+            cls._instance._load_config(config_path)
+        return cls._instance
+
+    def _load_config(self, config_path: str) -> None:
+        """YAML dosyasından konfigürasyonu yükler."""
+        # Proje kök dizinine göre mutlak yolu (absolute path) hesapla
+        # Bu dosyanın src/core/config_manager.py konumunda olduğu varsayılmıştır
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(current_dir))
+        absolute_config_path = os.path.join(project_root, config_path)
+
+        if not os.path.exists(absolute_config_path):
+            raise FileNotFoundError(
+                f"Configuration file not found: {absolute_config_path}"
+            )
+
+        with open(absolute_config_path, "r", encoding="utf-8") as f:
+            self._config = yaml.safe_load(f)
+
+    def get(self, key_path: str, default: Any = None) -> Any:
+        """
+        Noktayla ayrılmış anahtar yolu (key path) kullanarak bir konfigürasyon değerini
+        getirir.
+        Örnek: config.get("deep_learning.batch_size")
+        """
+        keys = key_path.split(".")
+        value = self._config
+
+        try:
+            for key in keys:
+                value = value[key]
+            return value
+        except (KeyError, TypeError):
+            return default
+
+    @property
+    def config(self) -> Dict[str, Any]:
+        """Tüm konfigürasyon sözlüğünü (dictionary) döndürür."""
+        return self._config
+
+
+================================================================================
+
+Dosya: src\core\runtime_logger.py
+---------------------------------
+import json
+import os
+import time
+from contextlib import contextmanager
+
+from .config_manager import ConfigurationManager
+
+
+class RuntimeLogger:
+    """
+    Modellerin eğitim (Training Time) ve çıkarım (Inference Time) sürelerini
+    saniye cinsinden ölçüp JSON formatında kalıcı olarak kaydeden araçtır.
+    """
+
+    def __init__(self, experiment_id: str = "default"):
+        """
+        Args:
+            experiment_id (str): Kayıtların hangi deneye/seed'e ait olduğunu belirtenID.
+        """
+        self.config = ConfigurationManager()
+        self.logs_dir = self.config.get("paths.logs_dir", "logs")
+        self.experiment_id = str(experiment_id)
+
+        # Proje kök dizinini bul ve mutlak yolu hesapla
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(current_dir))
+        self.logs_path = os.path.join(project_root, self.logs_dir)
+
+        if not os.path.exists(self.logs_path):
+            os.makedirs(self.logs_path, exist_ok=True)
+
+        self.log_file = os.path.join(self.logs_path, "runtime_logs.json")
+
+    def _load_logs(self) -> dict:
+        """Mevcut log dosyasını okur, yoksa boş bir sözlük döner."""
+        if os.path.exists(self.log_file):
+            try:
+                with open(self.log_file, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                return {}
+        return {}
+
+    def _save_logs(self, logs_data: dict) -> None:
+        """Log verilerini JSON dosyasına yazar."""
+        with open(self.log_file, "w", encoding="utf-8") as f:
+            json.dump(logs_data, f, indent=4)
+
+    def log_time(self, model_name: str, phase: str, duration_seconds: float) -> None:
+        """
+        Belirtilen model ve faz için geçen süreyi kaydeder.
+
+        Args:
+            model_name (str): Modelin adı (ör: '1D-CNN', 'Automata')
+            phase (str): Hangi aşama olduğu ('Training', 'Inference')
+            duration_seconds (float): Saniye cinsinden geçen süre
+        """
+        logs = self._load_logs()
+
+        # JSON yapısı: { "experiment_42": { "1D-CNN": { "Training": 12.5,
+        # "Inference": 0.5 } } }
+        exp_key = f"experiment_{self.experiment_id}"
+
+        if exp_key not in logs:
+            logs[exp_key] = {}
+        if model_name not in logs[exp_key]:
+            logs[exp_key][model_name] = {}
+
+        logs[exp_key][model_name][phase] = round(duration_seconds, 4)
+
+        self._save_logs(logs)
+
+    @contextmanager
+    def measure_time(self, model_name: str, phase: str):
+        """
+        'with' bloğu kullanılarak kod bloğunun çalışma süresini otomatik
+         ölçer ve kaydeder.
+
+        Örnek Kullanım:
+            logger = RuntimeLogger(experiment_id="42")
+            with logger.measure_time("1D-CNN", "Training"):
+                model.train()
+        """
+        start_time = time.time()
+        try:
+            yield
+        finally:
+            end_time = time.time()
+            duration = end_time - start_time
+            self.log_time(model_name, phase, duration)
+
+
+================================================================================
+
+Dosya: src\models\__init__.py
+-----------------------------
+"""Models module containing Deep Learning, Automata and Interface definitions."""
+
+from src.models.base import IAnomalyDetector
+
+__all__ = ["IAnomalyDetector"]
+
+
+================================================================================
+
+Dosya: src\models\automata\__init__.py
+--------------------------------------
+from src.models.automata.paa import PAATransformer
+from src.models.automata.sax import SAXTransformer
+from src.models.automata.sliding_window import SlidingWindowExtractor
+from src.models.automata.vocabulary import VocabularyManager, UnseenHandler, levenshtein_distance
+from src.models.automata.detector import AutomataDetector
+
+__all__ = [
+    "PAATransformer",
+    "SAXTransformer",
+    "SlidingWindowExtractor",
+    "VocabularyManager",
+    "UnseenHandler",
+    "levenshtein_distance",
+    "AutomataDetector"
+]
+
+
+================================================================================
+
+Dosya: src\models\automata\detector.py
+--------------------------------------
+import pandas as pd
+import numpy as np
+from typing import Optional, List, Dict
+
+from src.models.base import IAnomalyDetector
+from src.core.config_manager import ConfigurationManager
+from src.core.artifact_manager import ExperimentArtifactManager
+from src.models.automata.paa import PAATransformer
+from src.models.automata.sax import SAXTransformer
+from src.models.automata.sliding_window import SlidingWindowExtractor
+from src.models.automata.vocabulary import VocabularyManager
+
+class AutomataDetector(IAnomalyDetector):
+    """
+    PAA -> SAX -> Sliding Window -> Olasılıksal Durum Makinesi
+    mantığıyla çalışan Siyah Kutu olmayan (Açıklanabilir) Anomali Tespit Modeli.
+    """
+
+    def __init__(self, experiment_id: str = "default"):
+        self.experiment_id = experiment_id
+        self.config = ConfigurationManager()
+        self.artifact_manager = ExperimentArtifactManager(experiment_id=experiment_id)
+        
+        self.threshold = self.config.get("automata.threshold", 0.5)
+        # PAA Küçültme Faktörü: Zaman serisinde ardışık kaç noktanın ortalaması alınacak
+        # Konfigürasyonda yoksa varsayılan olarak 1 (küçültme yok) kabul edilebilir
+        self.paa_factor = self.config.get("automata.paa_factor", 1) 
+        
+        self.paa: Optional[PAATransformer] = None
+        self.sax: Optional[SAXTransformer] = None
+        self.slider: Optional[SlidingWindowExtractor] = None
+        self.vocab_manager: Optional[VocabularyManager] = None
+        
+        # Geçiş Olasılık Matrisi: transition_matrix[current_word][next_word] = probability
+        self.transition_matrix: Dict[str, Dict[str, float]] = {}
+
+    def build_model(self, *args, **kwargs) -> None:
+        """
+        Pipeline bileşenlerini (Transformer'ları) örnekler.
+        """
+        self.paa = PAATransformer()
+        self.sax = SAXTransformer()
+        self.slider = SlidingWindowExtractor()
+        self.vocab_manager = VocabularyManager(experiment_id=self.experiment_id)
+
+    def _pipeline_transform(self, series: np.ndarray) -> List[str]:
+        """
+        PC1 serisini alır, PAA, SAX ve Sliding Window uygulayıp kelime listesi döner.
+        """
+        assert self.paa is not None
+        assert self.sax is not None
+        assert self.slider is not None
+        
+        n_segments = max(1, len(series) // self.paa_factor)
+        paa_values = self.paa.transform(series, n_segments=n_segments)
+        sax_symbols = self.sax.transform(paa_values)
+        words = self.slider.extract(sax_symbols)
+        return words
+
+    def train(self, X_train: pd.DataFrame, y_train: pd.Series, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.Series] = None) -> None:
+        """
+        Otomata modelini eğitir:
+        1. PC1 verisini kelimelere (pattern) dönüştürür.
+        2. Sadece normal (anomali olmayan) zaman adımlarındaki kelimeleri sözlüğe ekler.
+        3. Normal kelimeler arası geçiş olasılıklarını hesaplar.
+        """
+        self.build_model()
+        assert self.vocab_manager is not None
+        
+        # X_train bir DataFrame, biz PC1 kolonunu (veya ilk kolonu) alıyoruz
+        series = np.asarray(X_train.iloc[:, 0].to_numpy(), dtype=float)
+        
+        # 1. Pipeline dönüşümü
+        words = self._pipeline_transform(series)
+        
+        # Normal (y=0) kelimeleri ayıklamak için indeks haritalaması yapalım
+        # Kayan pencere (window_size) boyutu w ise, elde edilen i. kelime
+        # orijinal seride (i * paa_factor + window_size - 1) indeksine denk gelir.
+        window_size = self.slider.window_size if self.slider else 5
+        
+        normal_words = []
+        normal_transitions = [] # (current_word, next_word)
+        
+        for i in range(len(words)):
+            # Kelimenin orijinal serideki son elemanının indeksi
+            original_idx = min((i * self.paa_factor) + window_size - 1, len(y_train) - 1)
+            
+            # Sadece normal verileri (y=0) modele öğretmek istiyoruz
+            if y_train.iloc[original_idx] == 0:
+                normal_words.append(words[i])
+                
+            # Geçiş (Transition) sayımı: Eğitime y=0 iken ardışık kelime geçişleri dahil edilir
+            if i < len(words) - 1:
+                next_original_idx = min(((i + 1) * self.paa_factor) + window_size - 1, len(y_train) - 1)
+                # Geçişin her iki tarafı da normal olmalı ki sağlıklı bir "normal geçiş" öğrenebilelim
+                if y_train.iloc[original_idx] == 0 and y_train.iloc[next_original_idx] == 0:
+                    normal_transitions.append((words[i], words[i+1]))
+                    
+        # 2. Vocabulary oluştur ve kaydet
+        self.vocab_manager.build_vocabulary(normal_words)
+        self.vocab_manager.save("automata_vocab")
+        
+        # 3. Geçiş Matrisini Oluştur (Transition Matrix)
+        transition_counts: Dict[str, Dict[str, int]] = {}
+        for cw, nw in normal_transitions:
+            if cw not in transition_counts:
+                transition_counts[cw] = {}
+            transition_counts[cw][nw] = transition_counts[cw].get(nw, 0) + 1
+            
+        self.transition_matrix = {}
+        for cw, next_words in transition_counts.items():
+            total_transitions = sum(next_words.values())
+            self.transition_matrix[cw] = {nw: count / total_transitions for nw, count in next_words.items()}
+            
+        # Geçiş matrisini kaydet
+        self.artifact_manager.save_dict_artifact(self.transition_matrix, "automata_transitions")
+        print("Automata eğitimi tamamlandı ve sözlük kaydedildi.")
+
+    def predict(self, X_test: pd.DataFrame) -> np.ndarray:
+        """
+        Test verisi için anomali tahmini yapar.
+        Geçiş olasılığı (transition probability) düşükse veya geçiş hiç yoksa anomali sayılır.
+        """
+        if not self.transition_matrix:
+            # Model yüklenmemişse artifact'lerden okumayı dener
+            self.build_model()
+            assert self.vocab_manager is not None
+            self.vocab_manager.load("automata_vocab")
+            self.transition_matrix = self.artifact_manager.load_dict_artifact("automata_transitions")
+            
+        assert self.vocab_manager is not None
+        assert self.slider is not None
+            
+        series = np.asarray(X_test.iloc[:, 0].to_numpy(), dtype=float)
+        words = self._pipeline_transform(series)
+        
+        anomaly_scores = []
+        predictions = []
+        
+        # Çıkarım (Inference)
+        for i in range(len(words)):
+            if i == 0:
+                # İlk kelime için önceki bir durum yok, anomali skoru 0 kabul edilir
+                anomaly_scores.append(0.0)
+                predictions.append(0)
+                continue
+                
+            prev_word = self.vocab_manager.get_state(words[i-1])
+            curr_word = self.vocab_manager.get_state(words[i])
+            
+            # Geçiş olasılığını bul (yoksa 0)
+            prob = 0.0
+            if prev_word in self.transition_matrix and curr_word in self.transition_matrix[prev_word]:
+                prob = self.transition_matrix[prev_word][curr_word]
+                
+            # Confidence Score = Geçiş olasılığı
+            # Anomaly Score = 1 - Confidence Score
+            anomaly_score = 1.0 - prob
+            anomaly_scores.append(anomaly_score)
+            
+            # Eşiği aşarsa anomali (1)
+            is_anomaly = 1 if anomaly_score >= self.threshold else 0
+            predictions.append(is_anomaly)
+            
+        # Orijinal X_test boyutuna uydurmak için başa padding yapalım
+        pad_length = len(series) - len(predictions)
+        
+        if pad_length > 0:
+            padded_predictions = np.pad(predictions, (pad_length, 0), mode='constant', constant_values=0)
+        else:
+            padded_predictions = np.array(predictions)
+            
+        return padded_predictions
+
+
+================================================================================
+
+Dosya: src\models\automata\paa.py
+---------------------------------
+import numpy as np
+
+class PAATransformer:
+    """
+    Piecewise Aggregate Approximation (PAA) Dönüştürücüsü.
+    Zaman serisinin boyutunu küçültmek için veriyi eşit uzunlukta parçalara (segment)
+    böler ve her bir parçanın aritmetik ortalamasını alır.
+    """
+    
+    def transform(self, series: np.ndarray, n_segments: int) -> np.ndarray:
+        """
+        1 Boyutlu zaman serisini PAA yöntemi ile dönüştürür.
+        
+        Args:
+            series (np.ndarray): 1 Boyutlu zaman serisi dizisi (ör: PCA PC1 çıktısı).
+            n_segments (int): İstenilen segment (parça) sayısı. Bu değer aynı zamanda 
+                              oluşacak kelimenin uzunluğu (word size) olacaktır.
+                              
+        Returns:
+            np.ndarray: n_segments uzunluğunda ortalamaları alınmış yeni dizi.
+        """
+        if len(series) < n_segments:
+            raise ValueError(f"Seri uzunluğu ({len(series)}) segment sayısından ({n_segments}) küçük olamaz.")
+        if n_segments <= 0:
+            raise ValueError("Segment sayısı 0'dan büyük olmalıdır.")
+            
+        n = len(series)
+        
+        # Eğer dizi segment sayısına tam bölünüyorsa hızlı yol (reshape + mean)
+        if n % n_segments == 0:
+            return series.reshape(n_segments, -1).mean(axis=1)
+            
+        # Tam bölünmüyorsa kesirsel ağırlıklandırma (fractional weighting) veya 
+        # en yakın integer bazlı bölme yapılabilir. PAA'nın asıl tanımı fractional'dır 
+        # ancak pratik uygulamalarda array_split yaygın ve hızlıdır.
+        # Biz burada daha basit olan array_split metodunu kullanıyoruz.
+        segments = np.array_split(series, n_segments)
+        return np.array([np.mean(seg) for seg in segments])
+
+
+================================================================================
+
+Dosya: src\models\automata\sax.py
+---------------------------------
+import numpy as np
+from scipy.stats import norm
+from typing import List
+from src.core.config_manager import ConfigurationManager
+
+class SAXTransformer:
+    """
+    Symbolic Aggregate approXimation (SAX) Dönüştürücüsü.
+    Sayısal zaman serisini (genelde PAA çıktısı) istatistiksel normal dağılım 
+    eğrisinin altındaki alanlara (equiprobable regions) göre harflere (sembollere) dönüştürür.
+    """
+    
+    def __init__(self):
+        self.config = ConfigurationManager()
+        self.alphabet_size = self.config.get("automata.alphabet_size", 5)
+        
+        # Alfabe boyutu kadar harf (a, b, c, d, e...)
+        self.alphabet = [chr(97 + i) for i in range(self.alphabet_size)]
+        
+        # Breakpoints (Kırılma noktaları) hesaplama
+        # N boyutlu alfabe için N-1 adet kesim noktası gerekir.
+        # norm.ppf (Percent Point Function), cdf'in tersidir ve bize çan eğrisi altındaki 
+        # eşit alanlı dilimlerin x eksenindeki kesim noktalarını verir.
+        if self.alphabet_size > 1:
+            quantiles = np.linspace(0, 1, self.alphabet_size + 1)[1:-1]
+            self.breakpoints = norm.ppf(quantiles)
+        else:
+            self.breakpoints = np.array([])
+
+    def transform(self, paa_values: np.ndarray) -> List[str]:
+        """
+        Sayısal diziyi (ör: PAA ile küçültülmüş dizi) sembolik SAX dizisine çevirir.
+        
+        Not: Bu fonksiyona giren paa_values dizisinin standart normal dağılıma 
+        (mean=0, std=1) uygun bir şekilde standardize edilmiş (Z-Score) olması beklenir.
+        Ön İşleme katmanında bu işlem yapıldığı için burada doğrudan uygulanır.
+        
+        Args:
+            paa_values (np.ndarray): PAA çıktısı sayısal dizi
+            
+        Returns:
+            List[str]: Dönüştürülmüş harf dizisi (Ör: ['a', 'c', 'b', ...])
+        """
+        symbols = []
+        for val in paa_values:
+            # np.searchsorted, değerin kırılma noktaları arasındaki hangi index'e
+            # düştüğünü bularak uygun sembole haritalar.
+            idx = np.searchsorted(self.breakpoints, val)
+            symbols.append(self.alphabet[idx])
+            
+        return symbols
+
+
+================================================================================
+
+Dosya: src\models\automata\sliding_window.py
+--------------------------------------------
+from typing import List
+from src.core.config_manager import ConfigurationManager
+
+class SlidingWindowExtractor:
+    """
+    SAX ile oluşturulmuş harf dizisinden (symbols) kayan pencere (sliding window)
+    mantığı ile alt dizeler (kelimeler/patternler) çıkaran sınıf.
+    """
+    
+    def __init__(self):
+        self.config = ConfigurationManager()
+        # Automata için özel window size (DL window size'dan farklı olabilir)
+        self.window_size = self.config.get("automata.window_size", 5)
+
+    def extract(self, symbols: List[str]) -> List[str]:
+        """
+        Ardışık sembolleri window_size uzunluğunda kelimeler halinde birleştirir.
+        Örnek: symbols=['a','b','c','d'], window_size=3 -> ['abc', 'bcd']
+        
+        Args:
+            symbols (List[str]): SAX çıktısı olan tekil harflerin listesi.
+            
+        Returns:
+            List[str]: Pencere boyutu kadar uzunluktaki kelime listesi.
+        """
+        words = []
+        n = len(symbols)
+        
+        if n < self.window_size:
+            # Eğer toplam sembol sayısı pencere boyutundan küçükse
+            # olanı tek bir kelime olarak dön
+            return ["".join(symbols)] if n > 0 else []
+            
+        for i in range(n - self.window_size + 1):
+            word = "".join(symbols[i : i + self.window_size])
+            words.append(word)
+            
+        return words
+
+
+================================================================================
+
+Dosya: src\models\automata\vocabulary.py
+----------------------------------------
+from typing import List, Dict
+from src.core.artifact_manager import ExperimentArtifactManager
+
+def levenshtein_distance(s1: str, s2: str) -> int:
+    """
+    İki string arasındaki Levenshtein (düzenleme) mesafesini hesaplar.
+    Herhangi bir harici kütüphane bağımlılığı olmaması için saf Python ile yazılmıştır.
+    Pencere boyutları (kelime uzunluğu) genelde 5-10 karakter olduğu için 
+    performans sorunu yaratmaz.
+    """
+    if len(s1) < len(s2):
+        return levenshtein_distance(s2, s1)
+        
+    if len(s2) == 0:
+        return len(s1)
+        
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+        
+    return previous_row[-1]
+
+class UnseenHandler:
+    """
+    Test aşamasında karşılaşılan ancak eğitim aşamasındaki sözlükte (vocabulary)
+    bulunmayan kelimeleri en yakın sözlük elemanına haritalayan sınıf.
+    """
+    
+    @staticmethod
+    def handle_unseen(word: str, vocabulary: Dict[str, int]) -> str:
+        """
+        Verilen kelimeye Levenshtein mesafesi en düşük olan sözlük elemanını döner.
+        
+        Args:
+            word (str): Sözlükte bulunmayan (unseen) kelime
+            vocabulary (Dict[str, int]): Eğitim aşamasında oluşturulan sözlük
+            
+        Returns:
+            str: En yakın kelime
+        """
+        if not vocabulary:
+            raise ValueError("Sözlük (vocabulary) boş olamaz!")
+            
+        best_match: str = ""
+        min_distance = float('inf')
+        
+        for vocab_word in vocabulary.keys():
+            dist = levenshtein_distance(word, vocab_word)
+            if dist < min_distance:
+                min_distance = dist
+                best_match = vocab_word
+                # Eğer tam eşleşme (uzaklık 0) bulunursa direkt çık (genelde imkansız ama tedbir)
+                if min_distance == 0:
+                    break
+                    
+        return best_match
+
+class VocabularyManager:
+    """
+    Eğitim verisinden çıkarılan tüm SAX kelimelerini (pattern) ve frekanslarını
+    yöneten sınıftır. ExperimentArtifactManager ile diske kaydedilir/okunur.
+    """
+    
+    def __init__(self, experiment_id: str = "default"):
+        self.experiment_id = experiment_id
+        self.artifact_manager = ExperimentArtifactManager(experiment_id=experiment_id)
+        self.vocabulary: Dict[str, int] = {}
+        
+    def build_vocabulary(self, words: List[str]) -> None:
+        """
+        Verilen kelime listesinden frekans sözlüğü oluşturur.
+        """
+        self.vocabulary = {}
+        for word in words:
+            self.vocabulary[word] = self.vocabulary.get(word, 0) + 1
+            
+    def get_state(self, word: str) -> str:
+        """
+        Kelimenin sözlükteki halini döndürür. Yoksa UnseenHandler devreye girer.
+        """
+        if word in self.vocabulary:
+            return word
+        else:
+            return UnseenHandler.handle_unseen(word, self.vocabulary)
+            
+    def save(self, artifact_name: str = "automata_vocab"):
+        """Sözlüğü JSON olarak diske kaydeder."""
+        self.artifact_manager.save_dict_artifact(self.vocabulary, artifact_name)
+        
+    def load(self, artifact_name: str = "automata_vocab"):
+        """Diskteki JSON sözlüğü belleğe yükler."""
+        self.vocabulary = self.artifact_manager.load_dict_artifact(artifact_name)
+
+
+================================================================================
+
+Dosya: src\models\base.py
+-------------------------
+from abc import ABC, abstractmethod
+from typing import Optional
+import pandas as pd
+import numpy as np
+
+class IAnomalyDetector(ABC):
+    """
+    Tüm anomali tespit modelleri (Deep Learning veya Automata) için
+    ortak arayüz.
+    """
+
+    @abstractmethod
+    def build_model(self, *args, **kwargs):
+        """
+        Modelin mimarisini oluşturur ve ilklendirir.
+        """
+        pass
+
+    @abstractmethod
+    def train(self, X_train: pd.DataFrame, y_train: pd.Series, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.Series] = None):
+        """
+        Modeli verilen eğitim verisi ile eğitir.
+        
+        Args:
+            X_train (pd.DataFrame): Eğitim özellikleri.
+            y_train (pd.Series): Eğitim hedefleri (anomali etiketleri).
+            X_val (pd.DataFrame, optional): Doğrulama özellikleri (Early stopping vb. için).
+            y_val (pd.Series, optional): Doğrulama hedefleri.
+        """
+        pass
+
+    @abstractmethod
+    def predict(self, X_test: pd.DataFrame) -> np.ndarray:
+        """
+        Modeli kullanarak test verisi üzerinde çıkarım yapar.
+        
+        Args:
+            X_test (pd.DataFrame): Test özellikleri.
+            
+        Returns:
+            np.ndarray: Modelin anomali tahminleri (0 veya 1) veya skorları.
+        """
+        pass
+
+
+================================================================================
+
+Dosya: src\models\deep_learning\__init__.py
+-------------------------------------------
+from src.models.deep_learning.dataset import SlidingWindowDataset
+from src.models.deep_learning.adapter import DeepLearningAdapter
+from src.models.deep_learning.cnn import CNN1DModel
+from src.models.deep_learning.gru import GRUModel
+from src.models.deep_learning.factory import DeepLearningFactory
+
+__all__ = [
+    "SlidingWindowDataset",
+    "DeepLearningAdapter",
+    "CNN1DModel",
+    "GRUModel",
+    "DeepLearningFactory"
+]
+
+
+================================================================================
+
+Dosya: src\models\deep_learning\adapter.py
+------------------------------------------
+from __future__ import annotations
+from typing import Optional, TYPE_CHECKING
+
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+import pandas as pd
+import numpy as np
+
+from src.models.base import IAnomalyDetector
+from src.models.deep_learning.dataset import SlidingWindowDataset
+from src.core.config_manager import ConfigurationManager
+
+if TYPE_CHECKING:
+    from src.models.deep_learning.factory import DeepLearningFactory
+
+class DeepLearningAdapter(IAnomalyDetector):
+    """
+    Herhangi bir PyTorch modelini (CNN, GRU vb.) IAnomalyDetector
+    arayüzüne uyarlayan (Adapter) sınıftır.
+    """
+
+    def __init__(self, model_name: str, n_features: int):
+        self.model_name = model_name
+        self.n_features = n_features
+        self.config = ConfigurationManager()
+        
+        self.batch_size: int = self.config.get("deep_learning.batch_size", 32)
+        self.epochs: int = self.config.get("deep_learning.epochs", 50)
+        self.patience: int = self.config.get("deep_learning.patience", 5)
+        self.lr: float = self.config.get("deep_learning.learning_rate", 0.001)
+        self.window_size: int = self.config.get("deep_learning.window_size", 10)
+        
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model: Optional[nn.Module] = None
+        self.best_model_weights: Optional[dict] = None
+
+    def build_model(self) -> None:
+        from src.models.deep_learning.factory import DeepLearningFactory
+        
+        self.model = DeepLearningFactory.get_model(
+            model_name=self.model_name,
+            n_features=self.n_features,
+            window_size=self.window_size
+        )
+        self.model.to(self.device)
+
+    def train(self, X_train: pd.DataFrame, y_train: pd.Series, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.Series] = None) -> None:
+        if self.model is None:
+            self.build_model()
+        
+        assert self.model is not None  # Pyright narrowing
+            
+        train_dataset = SlidingWindowDataset(X_train, y_train, self.window_size)
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
+        
+        val_loader = None
+        if X_val is not None and y_val is not None:
+            val_dataset = SlidingWindowDataset(X_val, y_val, self.window_size)
+            val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
+            
+        criterion = nn.BCELoss()
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
+        
+        best_val_loss = float('inf')
+        patience_counter = 0
+        
+        for epoch in range(self.epochs):
+            self.model.train()
+            train_loss = 0.0
+            
+            for X_batch, y_batch in train_loader:
+                X_batch, y_batch = X_batch.to(self.device), y_batch.to(self.device)
+                
+                optimizer.zero_grad()
+                outputs = self.model(X_batch)
+                loss = criterion(outputs, y_batch)
+                loss.backward()
+                optimizer.step()
+                
+                train_loss += loss.item()
+                
+            train_loss /= len(train_loader)
+            
+            # Validation Step
+            if val_loader is not None:
+                self.model.eval()
+                val_loss = 0.0
+                with torch.no_grad():
+                    for X_batch, y_batch in val_loader:
+                        X_batch, y_batch = X_batch.to(self.device), y_batch.to(self.device)
+                        outputs = self.model(X_batch)
+                        loss = criterion(outputs, y_batch)
+                        val_loss += loss.item()
+                        
+                val_loss /= len(val_loader)
+                
+                print(f"Epoch {epoch+1}/{self.epochs} - Train Loss: {train_loss:.4f} - Val Loss: {val_loss:.4f}")
+                
+                # Early Stopping
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    patience_counter = 0
+                    self.best_model_weights = self.model.state_dict()
+                else:
+                    patience_counter += 1
+                    
+                if patience_counter >= self.patience:
+                    print(f"Early stopping tetiklendi! Epoch: {epoch+1}")
+                    if self.best_model_weights is not None:
+                        self.model.load_state_dict(self.best_model_weights)
+                    break
+            else:
+                print(f"Epoch {epoch+1}/{self.epochs} - Train Loss: {train_loss:.4f}")
+
+    def predict(self, X_test: pd.DataFrame) -> np.ndarray:
+        if self.model is None:
+            raise ValueError("Model henüz oluşturulmamış veya eğitilmemiş!")
+            
+        self.model.eval()
+        
+        dummy_y = pd.Series(0, index=X_test.index)
+        test_dataset = SlidingWindowDataset(X_test, dummy_y, self.window_size)
+        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
+        
+        predictions = []
+        with torch.no_grad():
+            for X_batch, _ in test_loader:
+                X_batch = X_batch.to(self.device)
+                outputs = self.model(X_batch)
+                predictions.extend(outputs.cpu().numpy().flatten())
+                
+        pad_length = self.window_size - 1
+        padded_predictions = np.pad(predictions, (pad_length, 0), mode='constant', constant_values=0)
+        
+        return padded_predictions
+
+
+================================================================================
+
+Dosya: src\models\deep_learning\cnn.py
+--------------------------------------
+import torch
+import torch.nn as nn
+from src.core.config_manager import ConfigurationManager
+
+class CNN1DModel(nn.Module):
+    """
+    Zaman serisi anomali tespiti için 1 Boyutlu Konvolüsyonel Sinir Ağı (1D-CNN) Modeli.
+    """
+    
+    def __init__(self, n_features: int, window_size: int):
+        super(CNN1DModel, self).__init__()
+        
+        self.config = ConfigurationManager()
+        num_filters_1 = self.config.get("deep_learning.cnn.num_filters_1", 64)
+        num_filters_2 = self.config.get("deep_learning.cnn.num_filters_2", 128)
+        kernel_size = self.config.get("deep_learning.cnn.kernel_size", 3)
+        
+        # padding işlemi zaman serisi boyutunun aşırı küçülmesini engellemek için eklenebilir
+        padding = kernel_size // 2
+        
+        # nn.Conv1d girdi olarak (Batch, Channels, Length) bekler.
+        # Bizim SlidingWindowDataset'imiz (Batch, Length/Window, Features/Channels) dönmektedir.
+        # Bu yüzden forward içinde tensörü permute etmeliyiz.
+        
+        self.conv_block1 = nn.Sequential(
+            nn.Conv1d(in_channels=n_features, out_channels=num_filters_1, kernel_size=kernel_size, padding=padding),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=2)
+        )
+        
+        self.conv_block2 = nn.Sequential(
+            nn.Conv1d(in_channels=num_filters_1, out_channels=num_filters_2, kernel_size=kernel_size, padding=padding),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool1d(1) # Çıktıyı (Batch, num_filters_2, 1) boyutuna sabitler
+        )
+        
+        # Sınıflandırma Katmanı
+        self.classifier = nn.Sequential(
+            nn.Linear(num_filters_2, 1),
+            nn.Sigmoid()
+        )
+        
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Args:
+            x (torch.Tensor): Boyutu (Batch, Window_Size, Features)
+            
+        Returns:
+            torch.Tensor: Boyutu (Batch, 1) - Anomali olasılığı
+        """
+        # (Batch, Window, Features) -> (Batch, Features, Window)
+        x = x.permute(0, 2, 1)
+        
+        x = self.conv_block1(x)
+        x = self.conv_block2(x)
+        
+        # (Batch, num_filters_2, 1) olan boyutu düzleştir (Batch, num_filters_2)
+        x = x.view(x.size(0), -1)
+        
+        x = self.classifier(x)
+        return x
+
+
+================================================================================
+
+Dosya: src\models\deep_learning\dataset.py
+------------------------------------------
+import pandas as pd
+import torch
+from torch.utils.data import Dataset
+
+
+class SlidingWindowDataset(Dataset):
+    """
+    Zaman serisi verisini PyTorch tensörlerine (Sliding Window formatında)
+    dönüştüren sınıf.
+    """
+
+    def __init__(self, X: pd.DataFrame, y: pd.Series, window_size: int):
+        """
+        Args:
+            X (pd.DataFrame): Özellikler matrisi (samples x features)
+            y (pd.Series): Hedef değişken serisi
+            window_size (int): Kayan pencere (sliding window) boyutu
+        """
+        self.X_values = X.values
+        self.y_values = y.values
+        self.window_size = window_size
+
+        # Olabilecek maksimum pencere sayısı
+        self.n_samples = len(self.X_values) - self.window_size + 1
+
+    def __len__(self) -> int:
+        return max(0, self.n_samples)
+
+    def __getitem__(self, index: int) -> tuple:
+        """
+        Args:
+            index (int): Pencere başlangıç indeksi
+
+        Returns:
+            tuple: (X_tensor, y_tensor)
+                X_tensor boyutu: (window_size, num_features)
+                y_tensor: İlgili pencerenin son elemanına karşılık gelen etiket
+        """
+        # Window'u al
+        x_window = self.X_values[index : index + self.window_size]
+
+        # Etiketi al (genellikle window'un son elemanının etiketi alınır)
+        y_label = self.y_values[index + self.window_size - 1]
+
+        # Tensörlere dönüştür
+        x_tensor = torch.tensor(x_window, dtype=torch.float32)
+        y_tensor = torch.tensor([y_label], dtype=torch.float32)
+
+        return x_tensor, y_tensor
+
+
+================================================================================
+
+Dosya: src\models\deep_learning\factory.py
+------------------------------------------
+import torch.nn as nn
+from src.models.deep_learning.cnn import CNN1DModel
+from src.models.deep_learning.gru import GRUModel
+
+class DeepLearningFactory:
+    """
+    İstenilen PyTorch modelini örnekleyen (instantiate) Factory sınıfı.
+    """
+    
+    @staticmethod
+    def get_model(model_name: str, n_features: int, window_size: int) -> nn.Module:
+        """
+        Verilen isme göre ilgili PyTorch nn.Module nesnesini döner.
+        
+        Args:
+            model_name (str): "cnn" veya "gru"
+            n_features (int): Girdi özellik sayısı
+            window_size (int): Kayan pencere boyutu
+            
+        Returns:
+            nn.Module: İlgili model
+        """
+        model_name = model_name.lower().strip()
+        
+        if model_name == "cnn":
+            return CNN1DModel(n_features=n_features, window_size=window_size)
+        elif model_name == "gru":
+            return GRUModel(n_features=n_features, window_size=window_size)
+        else:
+            raise ValueError(f"Bilinmeyen model ismi: {model_name}. Lütfen 'cnn' veya 'gru' giriniz.")
+
+
+================================================================================
+
+Dosya: src\models\deep_learning\gru.py
+--------------------------------------
+import torch
+import torch.nn as nn
+from src.core.config_manager import ConfigurationManager
+
+class GRUModel(nn.Module):
+    """
+    Zaman serisi anomali tespiti için GRU (Gated Recurrent Unit) Modeli.
+    """
+    
+    def __init__(self, n_features: int, window_size: int):
+        # window_size parametresi GRU'da doğrudan tanımlanmaz, ancak 
+        # arayüz tutarlılığı açısından init'te bekliyoruz.
+        super(GRUModel, self).__init__()
+        
+        self.config = ConfigurationManager()
+        hidden_size = self.config.get("deep_learning.gru.hidden_size", 64)
+        num_layers = self.config.get("deep_learning.gru.num_layers", 2)
+        dropout = self.config.get("deep_learning.gru.dropout", 0.2)
+        
+        self.gru = nn.GRU(
+            input_size=n_features, 
+            hidden_size=hidden_size, 
+            num_layers=num_layers, 
+            batch_first=True, 
+            dropout=dropout if num_layers > 1 else 0
+        )
+        
+        self.classifier = nn.Sequential(
+            nn.Dropout(dropout),
+            nn.Linear(hidden_size, 1),
+            nn.Sigmoid()
+        )
+        
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Args:
+            x (torch.Tensor): Boyutu (Batch, Window_Size, Features)
+            
+        Returns:
+            torch.Tensor: Boyutu (Batch, 1) - Anomali olasılığı
+        """
+        # GRU katmanına gönder, çıktı: 
+        # out = (batch, seq_len, hidden_size)
+        # h_n = (num_layers, batch, hidden_size)
+        out, _ = self.gru(x)
+        
+        # Son zaman adımının gizli durumunu (hidden state) al
+        # out[:, -1, :] -> (Batch, hidden_size)
+        last_hidden_state = out[:, -1, :]
+        
+        # Sınıflandırıcıya sok
+        x = self.classifier(last_hidden_state)
+        return x
+
+
+================================================================================
+
+Dosya: src\orchestration\__init__.py
+------------------------------------
+"""Orchestration module containing ExperimentOrchestrator."""
+
+
+================================================================================
+
+Dosya: src\reporting\__init__.py
+--------------------------------
+"""Reporting module.
+
+Contains ReportManager, StatisticalAnalyzer and ExplainabilityEngine.
+"""
+
+
+================================================================================
+
+Dosya: src\visualization\__init__.py
+------------------------------------
+"""Visualization module containing VisualizationManager."""
+
+
+================================================================================
+
+Dosya: tests\__init__.py
+------------------------
+"""Tests module."""
+
+
+================================================================================
+
+Dosya: tests\test_environment.py
+--------------------------------
+import sys
+
+
+def test_python_version():
+    """Ensure tests are running with a compatible Python version."""
+    assert sys.version_info >= (3, 8), "Python version must be 3.8 or higher."
+
+
+def test_environment_setup():
+    """Test if the core module is correctly accessible."""
+    import core
+
+    assert core is not None
+
+
+================================================================================
