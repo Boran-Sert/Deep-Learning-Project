@@ -14,6 +14,7 @@ paths:
 experiment:
   random_seeds: [42, 123, 2026, 7, 999]
   k_folds: 5
+  noise_std: 0.1
 
 deep_learning:
   batch_size: 32
@@ -36,3 +37,4 @@ automata:
   alphabet_size: 3 # Alphabet size
   paa_factor: 1    # PAA segment point reduction factor
   threshold: 0.5   # Anomaly confidence score threshold
+  path_window: 4   # Automata consecutive path length

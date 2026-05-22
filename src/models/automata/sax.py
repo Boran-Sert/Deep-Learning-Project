@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.stats import norm
-from typing import List
+from typing import List, Optional
 from src.core.config_manager import ConfigurationManager
 
 class SAXTransformer:
@@ -10,9 +10,9 @@ class SAXTransformer:
     eğrisinin altındaki alanlara (equiprobable regions) göre harflere (sembollere) dönüştürür.
     """
     
-    def __init__(self):
+    def __init__(self, alphabet_size: Optional[int] = None):
         self.config = ConfigurationManager()
-        self.alphabet_size = self.config.get("automata.alphabet_size", 5)
+        self.alphabet_size = alphabet_size if alphabet_size is not None else self.config.get("automata.alphabet_size", 5)
         
         # Alfabe boyutu kadar harf (a, b, c, d, e...)
         self.alphabet = [chr(97 + i) for i in range(self.alphabet_size)]

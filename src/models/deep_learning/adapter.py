@@ -54,9 +54,11 @@ class DeepLearningAdapter(IAnomalyDetector):
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-    def train(self, X_train: pd.DataFrame, y_train: pd.Series, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.Series] = None, seed: Optional[int] = None) -> None:
+    def train(self, X_train: pd.DataFrame, y_train: pd.Series, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.Series] = None, **kwargs) -> None:
+        seed = kwargs.get("seed")
         if seed is None:
             seed = self.config.get("experiment.current_seed", 42)
+        assert isinstance(seed, int)
         self._set_seed(seed)
         
         if self.model is None:
@@ -64,12 +66,12 @@ class DeepLearningAdapter(IAnomalyDetector):
         
         assert self.model is not None  # Pyright narrowing
             
-        train_dataset = SlidingWindowDataset(X_train, y_train, self.window_size)
+        train_dataset = SlidingWindowDataset(X_train, y_train, self.window_size, source_files=kwargs.get("source_files_train"))
         train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
         
         val_loader = None
         if X_val is not None and y_val is not None:
-            val_dataset = SlidingWindowDataset(X_val, y_val, self.window_size)
+            val_dataset = SlidingWindowDataset(X_val, y_val, self.window_size, source_files=kwargs.get("source_files_val"))
             val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
             
         criterion = nn.BCELoss()
@@ -126,14 +128,14 @@ class DeepLearningAdapter(IAnomalyDetector):
             else:
                 print(f"Epoch {epoch+1}/{self.epochs} - Train Loss: {train_loss:.4f}")
 
-    def predict(self, X_test: pd.DataFrame) -> np.ndarray:
+    def predict(self, X_test: pd.DataFrame, **kwargs) -> np.ndarray:
         if self.model is None:
             raise ValueError("Model henüz oluşturulmamış veya eğitilmemiş!")
             
         self.model.eval()
         
         dummy_y = pd.Series(0, index=X_test.index)
-        test_dataset = SlidingWindowDataset(X_test, dummy_y, self.window_size)
+        test_dataset = SlidingWindowDataset(X_test, dummy_y, self.window_size, source_files=kwargs.get("source_files_test"))
         test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
         
         predictions = []

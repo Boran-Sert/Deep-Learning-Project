@@ -16,8 +16,10 @@ class AutomataDetector(IAnomalyDetector):
     mantığıyla çalışan Siyah Kutu olmayan (Açıklanabilir) Anomali Tespit Modeli.
     """
 
-    def __init__(self, experiment_id: str = "default"):
+    def __init__(self, experiment_id: str = "default", window_size: Optional[int] = None, alphabet_size: Optional[int] = None):
         self.experiment_id = experiment_id
+        self.window_size = window_size
+        self.alphabet_size = alphabet_size
         self.config = ConfigurationManager()
         self.artifact_manager = ExperimentArtifactManager(experiment_id=experiment_id)
         
@@ -39,11 +41,12 @@ class AutomataDetector(IAnomalyDetector):
         Pipeline bileşenlerini (Transformer'ları) örnekler.
         """
         self.paa = PAATransformer()
-        self.sax = SAXTransformer()
-        self.slider = SlidingWindowExtractor()
+        self.sax = SAXTransformer(alphabet_size=self.alphabet_size)
+        self.slider = SlidingWindowExtractor(window_size=self.window_size)
         self.vocab_manager = VocabularyManager(experiment_id=self.experiment_id)
+        self.path_window = self.config.get("automata.path_window", getattr(self.slider, 'window_size', 4))
 
-    def _pipeline_transform(self, series: np.ndarray) -> List[str]:
+    def _pipeline_transform(self, series: np.ndarray, source_files: Optional[pd.Series] = None) -> List[Optional[str]]:
         """
         PC1 serisini alır, PAA, SAX ve Sliding Window uygulayıp kelime listesi döner.
         """
@@ -54,10 +57,10 @@ class AutomataDetector(IAnomalyDetector):
         n_segments = max(1, len(series) // self.paa_factor)
         paa_values = self.paa.transform(series, n_segments=n_segments)
         sax_symbols = self.sax.transform(paa_values)
-        words = self.slider.extract(sax_symbols)
+        words = self.slider.extract(sax_symbols, source_files=source_files)
         return words
 
-    def train(self, X_train: pd.DataFrame, y_train: pd.Series, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.Series] = None) -> None:
+    def train(self, X_train: pd.DataFrame, y_train: pd.Series, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.Series] = None, **kwargs) -> None:
         """
         Otomata modelini eğitir:
         1. PC1 verisini kelimelere (pattern) dönüştürür.
@@ -67,11 +70,10 @@ class AutomataDetector(IAnomalyDetector):
         self.build_model()
         assert self.vocab_manager is not None
         
-        # X_train bir DataFrame, biz PC1 kolonunu (veya ilk kolonu) alıyoruz
         series = np.asarray(X_train.iloc[:, 0].to_numpy(), dtype=float)
         
         # 1. Pipeline dönüşümü
-        words = self._pipeline_transform(series)
+        words = self._pipeline_transform(series, source_files=kwargs.get("source_files_train"))
         
         # Normal (y=0) kelimeleri ayıklamak için indeks haritalaması yapalım
         # Kayan pencere (window_size) boyutu w ise, elde edilen i. kelime
@@ -82,6 +84,9 @@ class AutomataDetector(IAnomalyDetector):
         normal_transitions = [] # (current_word, next_word)
         
         for i in range(len(words)):
+            if words[i] is None:
+                continue
+                
             # Kelimenin orijinal serideki son elemanının indeksi
             original_idx = min((i + window_size - 1) * self.paa_factor, len(y_train) - 1)
             
@@ -90,7 +95,7 @@ class AutomataDetector(IAnomalyDetector):
                 normal_words.append(words[i])
                 
             # Geçiş (Transition) sayımı: Eğitime y=0 iken ardışık kelime geçişleri dahil edilir
-            if i < len(words) - 1:
+            if i < len(words) - 1 and words[i+1] is not None:
                 next_original_idx = min(((i + 1) + window_size - 1) * self.paa_factor, len(y_train) - 1)
                 # Geçişin her iki tarafı da normal olmalı ki sağlıklı bir "normal geçiş" öğrenebilelim
                 if y_train.iloc[original_idx] == 0 and y_train.iloc[next_original_idx] == 0:
@@ -116,7 +121,7 @@ class AutomataDetector(IAnomalyDetector):
         self.artifact_manager.save_dict_artifact(self.transition_matrix, "automata_transitions")
         print("Automata eğitimi tamamlandı ve sözlük kaydedildi.")
 
-    def predict(self, X_test: pd.DataFrame) -> np.ndarray:
+    def predict(self, X_test: pd.DataFrame, **kwargs) -> np.ndarray:
         """
         Test verisi için anomali tahmini yapar.
         Geçiş olasılığı (transition probability) düşükse veya geçiş hiç yoksa anomali sayılır.
@@ -132,33 +137,45 @@ class AutomataDetector(IAnomalyDetector):
         assert self.slider is not None
             
         series = np.asarray(X_test.iloc[:, 0].to_numpy(), dtype=float)
-        words = self._pipeline_transform(series)
+        words = self._pipeline_transform(series, source_files=kwargs.get("source_files_test"))
         
         anomaly_scores = []
         predictions = []
         
         # Çıkarım (Inference)
         for i in range(len(words)):
-            if i == 0:
-                # İlk kelime için önceki bir durum yok, anomali skoru 0 kabul edilir
+            if words[i] is None:
                 anomaly_scores.append(0.0)
                 predictions.append(0)
                 continue
                 
-            prev_word = self.vocab_manager.get_state(words[i-1])
-            curr_word = self.vocab_manager.get_state(words[i])
+            path_prob = 1.0
+            start_idx = max(0, i - self.path_window + 1)
+            valid_transitions = 0
             
-            # Geçiş olasılığını bul (yoksa 0)
-            prob = 0.0
-            if prev_word in self.transition_matrix and curr_word in self.transition_matrix[prev_word]:
-                prob = self.transition_matrix[prev_word][curr_word]
+            for k in range(start_idx, i):
+                w_k = words[k]
+                w_k1 = words[k+1]
                 
-            # Confidence Score = Geçiş olasılığı
-            # Anomaly Score = 1 - Confidence Score
-            anomaly_score = 1.0 - prob
+                if w_k is None or w_k1 is None:
+                    continue
+                
+                prev_w = self.vocab_manager.get_state(w_k)
+                curr_w = self.vocab_manager.get_state(w_k1)
+                
+                p = 0.0
+                if prev_w in self.transition_matrix and curr_w in self.transition_matrix[prev_w]:
+                    p = self.transition_matrix[prev_w][curr_w]
+                    
+                path_prob *= p
+                valid_transitions += 1
+                
+            if valid_transitions == 0:
+                anomaly_score = 0.0
+            else:
+                anomaly_score = 1.0 - path_prob
+                
             anomaly_scores.append(anomaly_score)
-            
-            # Eşiği aşarsa anomali (1)
             is_anomaly = 1 if anomaly_score >= self.threshold else 0
             predictions.append(is_anomaly)
             
