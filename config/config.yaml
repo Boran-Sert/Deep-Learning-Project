@@ -32,6 +32,7 @@ deep_learning:
     dropout: 0.2
 
 automata:
-  window_size: 5  # SAX window size, can be different from DL
-  alphabet_size: 5 # Default, will be tuned in param search
+  window_size: 4  # SAX window size
+  alphabet_size: 3 # Alphabet size
+  paa_factor: 1    # PAA segment point reduction factor
   threshold: 0.5   # Anomaly confidence score threshold
