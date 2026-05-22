@@ -37,10 +37,12 @@ class SkabLoader(IDataLoader):
         # Tüm dataframe'leri birleştir
         df_combined = pd.concat(dataframes, ignore_index=False)
         
-        # Sütun isimlerini standartlaştır (target -> anomaly)
-        if 'anomaly' not in df_combined.columns and 'changepoint' in df_combined.columns:
-            # SKAB dataset genelde 'anomaly' kolonuna sahiptir ancak yoksa oluşturulabilir.
-            pass
+        # Sütun isimlerini standartlaştır
+        if 'anomaly' not in df_combined.columns:
+            if 'changepoint' in df_combined.columns:
+                df_combined.rename(columns={'changepoint': 'anomaly'}, inplace=True)
+            else:
+                raise ValueError("SKAB veri setinde 'anomaly' kolonu bulunamadı!")
             
         # İndeksin adını temizle
         df_combined.index.name = "datetime"
