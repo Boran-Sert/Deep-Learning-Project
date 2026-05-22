@@ -4,7 +4,7 @@ from src.orchestration.events import (
     ModelTrainedEvent,
     EvaluationCompletedEvent,
     AutomataDecisionEvent,
-    SensitivityAnalysisEvent
+    SensitivityAnalysisEvent,
 )
 from src.orchestration.orchestrator import ExperimentOrchestrator
 
@@ -15,5 +15,5 @@ __all__ = [
     "EvaluationCompletedEvent",
     "AutomataDecisionEvent",
     "SensitivityAnalysisEvent",
-    "ExperimentOrchestrator"
+    "ExperimentOrchestrator",
 ]

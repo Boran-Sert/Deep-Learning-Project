@@ -9,7 +9,9 @@ from src.data.loader.base import IDataLoader
 class BatadalLoader(IDataLoader):
     """
     BATADAL veri setini (sadece Training Dataset 2) yükleyen sınıf.
-    Zaman sütununu indeks olarak ayarlar ve hedef sütununu 'anomaly' olarak standartlaştırır.
+
+    Zaman sütununu indeks olarak ayarlar ve hedef sütununu
+    'anomaly' olarak standartlaştırır.
     """
 
     def __init__(self):
@@ -28,13 +30,17 @@ class BatadalLoader(IDataLoader):
 
         # Sadece Training Dataset 2'yi okuduğumuzdan emin olalım
         if "BATADAL_dataset04.csv" not in os.path.basename(batadal_path):
-            raise ValueError(f"Sadece Training Dataset 2 (BATADAL_dataset04.csv) kullanılmalıdır! Verilen yol: {batadal_path}")
+            raise ValueError(
+                "Sadece Training Dataset 2 (BATADAL_dataset04.csv) "
+                f"kullanılmalıdır! Verilen yol: {batadal_path}"
+            )
 
         # BATADAL csv okuma (genellikle sütunlar virgülle ayrılmıştır)
         # Sütunlarda boşluk vs. olabilir, parse_dates kullanacağız
         df = pd.read_csv(batadal_path)
 
-        # Sütun isimlerindeki boşlukları temizleyelim (BATADAL'da ' DATETIME' vb olabilir)
+        # Sütun isimlerindeki boşlukları temizleyelim
+        # (BATADAL'da ' DATETIME' vb olabilir)
         df.columns = df.columns.str.strip()
 
         # Datetime sütununu index yapalım
@@ -53,7 +59,9 @@ class BatadalLoader(IDataLoader):
 
         # Eğer 'anomaly' kolonu yoksa hata fırlat
         if "anomaly" not in df.columns:
-            raise ValueError("BATADAL veri setinde hedef (ATT_FLAG -> anomaly) kolonu bulunamadı!")
+            raise ValueError(
+                "BATADAL veri setinde hedef (ATT_FLAG -> anomaly) kolonu bulunamadı!"
+            )
 
         df.sort_index(inplace=True)
         return df

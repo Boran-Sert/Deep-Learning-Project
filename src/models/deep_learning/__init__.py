@@ -9,5 +9,5 @@ __all__ = [
     "DeepLearningAdapter",
     "CNN1DModel",
     "GRUModel",
-    "DeepLearningFactory"
+    "DeepLearningFactory",
 ]

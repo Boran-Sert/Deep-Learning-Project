@@ -27,5 +27,6 @@ class DataLoaderFactory:
             return BatadalLoader()
         else:
             raise ValueError(
-                f"Bilinmeyen veri seti türü: {dataset_name}. Lütfen 'skab' veya 'batadal' kullanın."
+                f"Bilinmeyen veri seti türü: {dataset_name}. "
+                "Lütfen 'skab' veya 'batadal' kullanın."
             )
