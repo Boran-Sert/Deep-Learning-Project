@@ -15,6 +15,48 @@ Deep-Learning-Project/
 │   │   ├── artifact_manager.py
 │   │   ├── config_manager.py
 │   │   └── runtime_logger.py
+│   ├── data
+│   │   ├── __init__.py
+│   │   ├── loader
+│   │   │   ├── __init__.py
+│   │   │   ├── base.py
+│   │   │   ├── batadal.py
+│   │   │   ├── factory.py
+│   │   │   └── skab.py
+│   │   ├── preprocess
+│   │   │   ├── __init__.py
+│   │   │   ├── cleaning.py
+│   │   │   └── pipeline.py
+│   │   ├── raw
+│   │   │   ├── BATADAL_dataset04.csv
+│   │   │   └── SKAB-master
+│   │   │       ├── valve1
+│   │   │       │   ├── 0.csv
+│   │   │       │   ├── 1.csv
+│   │   │       │   ├── 10.csv
+│   │   │       │   ├── 11.csv
+│   │   │       │   ├── 12.csv
+│   │   │       │   ├── 13.csv
+│   │   │       │   ├── 14.csv
+│   │   │       │   ├── 15.csv
+│   │   │       │   ├── 2.csv
+│   │   │       │   ├── 3.csv
+│   │   │       │   ├── 4.csv
+│   │   │       │   ├── 5.csv
+│   │   │       │   ├── 6.csv
+│   │   │       │   ├── 7.csv
+│   │   │       │   ├── 8.csv
+│   │   │       │   └── 9.csv
+│   │   │       └── valve2
+│   │   │           ├── 0.csv
+│   │   │           ├── 1.csv
+│   │   │           ├── 2.csv
+│   │   │           └── 3.csv
+│   │   └── splitter
+│   │       ├── __init__.py
+│   │       ├── base.py
+│   │       ├── batadal.py
+│   │       └── skab.py
 │   ├── models
 │   │   ├── __init__.py
 │   │   ├── automata
@@ -33,7 +75,10 @@ Deep-Learning-Project/
 │   │       ├── factory.py
 │   │       └── gru.py
 │   ├── orchestration
-│   │   └── __init__.py
+│   │   ├── __init__.py
+│   │   ├── event_bus.py
+│   │   ├── events.py
+│   │   └── orchestrator.py
 │   ├── reporting
 │   │   └── __init__.py
 │   ├── utils
@@ -41,7 +86,42 @@ Deep-Learning-Project/
 │       └── __init__.py
 └── tests
     ├── __init__.py
-    └── test_environment.py
+    ├── test_automata_components.py
+    ├── test_environment.py
+    └── test_orchestrator.py
+
+================================================================================
+
+Dosya: .gitignore
+-----------------
+# Virtual Environment
+venv/
+env/
+.env
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+
+# IDE and OS
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+.DS_Store
+
+# Project specific
+outputs/
+logs/
+artifacts/
+*.log
+*.joblib
+*.pth
+src/data/raw
+
 
 ================================================================================
 
@@ -101,7 +181,7 @@ Herhangi bir sorun yaşarsanız `ci.yml` (GitHub Actions) çıktılarını kontr
 
 ================================================================================
 
-Dosya: config\config.yaml
+Dosya: config/config.yaml
 -------------------------
 project:
   name: "Time Series Anomaly Detection"
@@ -119,6 +199,7 @@ paths:
 experiment:
   random_seeds: [42, 123, 2026, 7, 999]
   k_folds: 5
+  noise_std: 0.1
 
 deep_learning:
   batch_size: 32
@@ -137,9 +218,11 @@ deep_learning:
     dropout: 0.2
 
 automata:
-  window_size: 5  # SAX window size, can be different from DL
-  alphabet_size: 5 # Default, will be tuned in param search
+  window_size: 4  # SAX window size
+  alphabet_size: 3 # Alphabet size
+  paa_factor: 1    # PAA segment point reduction factor
   threshold: 0.5   # Anomaly confidence score threshold
+  path_window: 4   # Automata consecutive path length
 
 
 ================================================================================
@@ -266,14 +349,14 @@ ruff>=0.1.0
 
 ================================================================================
 
-Dosya: src\__init__.py
+Dosya: src/__init__.py
 ----------------------
 # Source code initialization
 
 
 ================================================================================
 
-Dosya: src\core\__init__.py
+Dosya: src/core/__init__.py
 ---------------------------
 # Core module initialization
 from .artifact_manager import ExperimentArtifactManager
@@ -285,7 +368,7 @@ __all__ = ["ConfigurationManager", "ExperimentArtifactManager", "RuntimeLogger"]
 
 ================================================================================
 
-Dosya: src\core\artifact_manager.py
+Dosya: src/core/artifact_manager.py
 -----------------------------------
 import json
 import os
@@ -369,7 +452,7 @@ class ExperimentArtifactManager:
 
 ================================================================================
 
-Dosya: src\core\config_manager.py
+Dosya: src/core/config_manager.py
 ---------------------------------
 import os
 from typing import Any, Dict
@@ -433,7 +516,7 @@ class ConfigurationManager:
 
 ================================================================================
 
-Dosya: src\core\runtime_logger.py
+Dosya: src/core/runtime_logger.py
 ---------------------------------
 import json
 import os
@@ -529,7 +612,546 @@ class RuntimeLogger:
 
 ================================================================================
 
-Dosya: src\models\__init__.py
+Dosya: src/data/__init__.py
+---------------------------
+"""Data module containing DataLoaders, SplitStrategies and Preprocessor Pipelines."""
+
+
+================================================================================
+
+Dosya: src/data/loader/__init__.py
+----------------------------------
+from src.data.loader.base import IDataLoader
+from src.data.loader.skab import SkabLoader
+from src.data.loader.batadal import BatadalLoader
+from src.data.loader.factory import DataLoaderFactory
+
+__all__ = [
+    "IDataLoader",
+    "SkabLoader",
+    "BatadalLoader",
+    "DataLoaderFactory"
+]
+
+
+================================================================================
+
+Dosya: src/data/loader/base.py
+------------------------------
+from abc import ABC, abstractmethod
+import pandas as pd
+
+class IDataLoader(ABC):
+    """
+    Tüm veri setleri için veri yükleme arayüzü.
+    Factory Pattern ile üretilen nesneler bu arayüzü uygulayacaktır.
+    """
+    
+    @abstractmethod
+    def load_data(self) -> pd.DataFrame:
+        """
+        Veri setini okuyup pandas DataFrame olarak döndürür.
+        """
+        pass
+
+
+================================================================================
+
+Dosya: src/data/loader/batadal.py
+---------------------------------
+import os
+
+import pandas as pd
+
+from src.core.config_manager import ConfigurationManager
+from src.data.loader.base import IDataLoader
+
+
+class BatadalLoader(IDataLoader):
+    """
+    BATADAL veri setini (sadece Training Dataset 2) yükleyen sınıf.
+    Zaman sütununu indeks olarak ayarlar ve hedef sütununu 'anomaly' olarak standartlaştırır.
+    """
+
+    def __init__(self):
+        self.config = ConfigurationManager()
+
+    def load_data(self) -> pd.DataFrame:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+
+        batadal_path = os.path.join(
+            project_root, self.config.get("paths.batadal_dataset")
+        )
+
+        if not os.path.exists(batadal_path):
+            raise FileNotFoundError(f"BATADAL veri dosyası bulunamadı: {batadal_path}")
+
+        # Sadece Training Dataset 2'yi okuduğumuzdan emin olalım
+        if "BATADAL_dataset04.csv" not in os.path.basename(batadal_path):
+            raise ValueError(f"Sadece Training Dataset 2 (BATADAL_dataset04.csv) kullanılmalıdır! Verilen yol: {batadal_path}")
+
+        # BATADAL csv okuma (genellikle sütunlar virgülle ayrılmıştır)
+        # Sütunlarda boşluk vs. olabilir, parse_dates kullanacağız
+        df = pd.read_csv(batadal_path)
+
+        # Sütun isimlerindeki boşlukları temizleyelim (BATADAL'da ' DATETIME' vb olabilir)
+        df.columns = df.columns.str.strip()
+
+        # Datetime sütununu index yapalım
+        if "DATETIME" in df.columns:
+            df["DATETIME"] = pd.to_datetime(df["DATETIME"], dayfirst=True)
+            df.set_index("DATETIME", inplace=True)
+            df.index.name = "datetime"
+        elif "datetime" in df.columns:
+            df["datetime"] = pd.to_datetime(df["datetime"])
+            df.set_index("datetime", inplace=True)
+
+        # Hedef kolonunu 'anomaly' olarak standartlaştır
+        # BATADAL'da etiket sütunu genellikle 'ATT_FLAG' (0 veya 1)
+        if "ATT_FLAG" in df.columns:
+            df.rename(columns={"ATT_FLAG": "anomaly"}, inplace=True)
+
+        # Eğer 'anomaly' kolonu yoksa hata fırlat
+        if "anomaly" not in df.columns:
+            raise ValueError("BATADAL veri setinde hedef (ATT_FLAG -> anomaly) kolonu bulunamadı!")
+
+        df.sort_index(inplace=True)
+        return df
+
+
+================================================================================
+
+Dosya: src/data/loader/factory.py
+---------------------------------
+from src.data.loader.base import IDataLoader
+from src.data.loader.batadal import BatadalLoader
+from src.data.loader.skab import SkabLoader
+
+
+class DataLoaderFactory:
+    """
+    Veri yükleyicileri (Loaders) üretmek için Factory sınıfı.
+    """
+
+    @staticmethod
+    def get_loader(dataset_name: str) -> IDataLoader:
+        """
+        İstenen veri setinin ismine göre ilgili Loader sınıfını döndürür.
+
+        Args:
+            dataset_name: "skab" veya "batadal"
+
+        Returns:
+            IDataLoader nesnesi
+        """
+        dataset_name = dataset_name.lower().strip()
+
+        if dataset_name == "skab":
+            return SkabLoader()
+        elif dataset_name == "batadal":
+            return BatadalLoader()
+        else:
+            raise ValueError(
+                f"Bilinmeyen veri seti türü: {dataset_name}. Lütfen 'skab' veya 'batadal' kullanın."
+            )
+
+
+================================================================================
+
+Dosya: src/data/loader/skab.py
+------------------------------
+import os
+import glob
+import pandas as pd
+from typing import List
+
+from src.core.config_manager import ConfigurationManager
+from src.data.loader.base import IDataLoader
+
+class SkabLoader(IDataLoader):
+    """
+    SKAB (Skoltech Anomaly Benchmark) veri setini yükleyen sınıf.
+    valve1 ve valve2 dizinlerindeki csv dosyalarını birleştirir,
+    metadata (source_group, source_file) ekler ve indeksi datetime yapar.
+    """
+
+    def __init__(self):
+        self.config = ConfigurationManager()
+        
+    def load_data(self) -> pd.DataFrame:
+        # Proje kök dizinini bul
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+        
+        valve1_path = os.path.join(project_root, self.config.get("paths.skab_valve1"))
+        valve2_path = os.path.join(project_root, self.config.get("paths.skab_valve2"))
+        
+        dataframes: List[pd.DataFrame] = []
+        
+        # Valve 1 Okuma
+        self._read_valve_directory(valve1_path, "valve1", dataframes)
+        # Valve 2 Okuma
+        self._read_valve_directory(valve2_path, "valve2", dataframes)
+            
+        if not dataframes:
+            raise FileNotFoundError("SKAB veri dosyaları bulunamadı. Lütfen dizin yollarını kontrol edin.")
+            
+        # Tüm dataframe'leri birleştir
+        df_combined = pd.concat(dataframes, ignore_index=False)
+        
+        # Sütun isimlerini standartlaştır
+        if 'anomaly' not in df_combined.columns:
+            if 'changepoint' in df_combined.columns:
+                df_combined.rename(columns={'changepoint': 'anomaly'}, inplace=True)
+            else:
+                raise ValueError("SKAB veri setinde 'anomaly' kolonu bulunamadı!")
+            
+        # İndeksin adını temizle
+        df_combined.index.name = "datetime"
+        
+        # Zamana göre sırala (her dosyanın kendi içinde zaten sıralı olduğu varsayılır, genel sıralama yapılabilir)
+        # Ancak farklı valflerde çakışan zamanlar olabilir, source bazında sıralamak daha iyi olabilir.
+        df_combined.sort_index(inplace=True)
+        
+        return df_combined
+
+    def _read_valve_directory(self, dir_path: str, group_name: str, df_list: List[pd.DataFrame]) -> None:
+        if not os.path.exists(dir_path):
+            return
+            
+        csv_files = glob.glob(os.path.join(dir_path, "*.csv"))
+        for file_path in csv_files:
+            file_name = os.path.basename(file_path)
+            
+            # SKAB dosyaları genellikle index='datetime' ve ayrıştırıcı olarak sep=';' ile gelir.
+            # Virgülle ayrılmış CSV is default, deniyoruz.
+            try:
+                df = pd.read_csv(file_path, index_col='datetime', parse_dates=True, sep=';')
+            except ValueError:
+                # Eger ; degilse ve datetime index bulunamazsa default ile dene
+                df = pd.read_csv(file_path, index_col=0, parse_dates=True)
+                
+            # Metadata ekle
+            df['source_group'] = group_name
+            df['source_file'] = file_name
+            
+            df_list.append(df)
+
+
+================================================================================
+
+Dosya: src/data/preprocess/__init__.py
+--------------------------------------
+from src.data.preprocess.cleaning import handle_missing_values, extract_features_and_target
+from src.data.preprocess.pipeline import PreprocessorPipeline
+
+__all__ = [
+    "handle_missing_values",
+    "extract_features_and_target",
+    "PreprocessorPipeline"
+]
+
+
+================================================================================
+
+Dosya: src/data/preprocess/cleaning.py
+--------------------------------------
+import pandas as pd
+
+def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Veri setindeki eksik değerleri (NaN) doldurur.
+    Zaman serisi projelerinde veri sürekliliğini bozmamak adına varsayılan olarak
+    forward-fill (ffill) ve gerekirse backward-fill (bfill) kullanılır.
+    
+    Args:
+        df (pd.DataFrame): Eksik veri içerebilen DataFrame.
+        
+    Returns:
+        pd.DataFrame: Eksik değerleri temizlenmiş/doldurulmuş DataFrame.
+    """
+    # Zaman serisi mantığında en uygun doldurma öncekinin aynısını kopyalamaktır (ffill)
+    # Eğer en başta eksik veri varsa bfill ile desteklenir
+    df_cleaned = df.ffill().bfill()
+    
+    return df_cleaned
+
+def extract_features_and_target(df: pd.DataFrame, target_col: str = 'anomaly') -> tuple:
+    """
+    Veri setini X (özellikler) ve y (hedef değişken) olarak ikiye ayırır.
+    Metadata kolonlarını (source_file, source_group vs.) özelliklerden çıkarır.
+    
+    Args:
+        df (pd.DataFrame): Ham DataFrame
+        target_col (str): Hedef değişkenin kolon adı
+        
+    Returns:
+        tuple: (X_df, y_series)
+    """
+    # Özellik olarak kullanılmayacak meta veri kolonları (varsa)
+    meta_cols = ['source_file', 'source_group']
+    
+    # Model girdisi olmayacak tüm kolonları düşür
+    cols_to_drop = [target_col] + [c for c in meta_cols if c in df.columns]
+    
+    # Eğer target kolon veri setinde hiç yoksa (örn. sadece test verisi) boş dönebilir
+    if target_col in df.columns:
+        y = df[target_col]
+        X = df.drop(columns=cols_to_drop)
+    else:
+        y = pd.Series(0, index=df.index, name=target_col)
+        cols_to_drop = [c for c in meta_cols if c in df.columns]
+        X = df.drop(columns=cols_to_drop)
+        
+    return X, y
+
+
+================================================================================
+
+Dosya: src/data/preprocess/pipeline.py
+--------------------------------------
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+from src.core.artifact_manager import ExperimentArtifactManager
+
+class PreprocessorPipeline:
+    """
+    Veri seti ön işleme (Normalizasyon ve PCA) adımlarını yürüten sınıftır.
+    Veri sızıntısını (Data Leakage) engellemek amacıyla 'fit' işlemi yalnızca Train 
+    verisine uygulanır, Scaler ve PCA durumları ExperimentArtifactManager üzerinden diske yazılır/okunur.
+    """
+
+    def __init__(self, experiment_id: str = "default"):
+        self.experiment_id = experiment_id
+        self.artifact_manager = ExperimentArtifactManager(experiment_id=experiment_id)
+        
+    def fit_transform(self, X_train: pd.DataFrame) -> tuple:
+        """
+        Train verisi üzerinde normalizasyon ve PCA modellerini eğitir (fit) ve 
+        dönüştürülmüş (transform) veriyi döner. Aynı zamanda eğitilen objeleri
+        (artifacts) diske kaydeder.
+        
+        Args:
+            X_train (pd.DataFrame): Özellikleri içeren Train seti
+            
+        Returns:
+            tuple: (X_train_scaled, X_train_pca)
+                - X_train_scaled: Deep Learning modelleri için standartlaştırılmış özellikler.
+                - X_train_pca: Automata modeli için tek bileşene (PC1) indirilmiş özellikler.
+        """
+        # Eksik değerleri ileri ve geri doldurarak yönet (Zaman serisi için en uygunu)
+        X_train = X_train.ffill().bfill()
+        
+        # Normalizasyon (StandardScaler)
+        scaler = StandardScaler()
+        X_scaled_array = scaler.fit_transform(X_train)
+        
+        X_train_scaled = pd.DataFrame(
+            X_scaled_array, 
+            index=X_train.index, 
+            columns=X_train.columns
+        )
+        
+        # PCA (Sadece PC1 - Automata İçin)
+        pca = PCA(n_components=1)
+        X_pca_array = pca.fit_transform(X_train_scaled)
+        
+        X_train_pca = pd.DataFrame(
+            X_pca_array, 
+            index=X_train.index, 
+            columns=['PC1']
+        )
+        
+        # Öğrenilen objeleri (Artifacts) kaydet (Data Leakage'i önlemek için)
+        self.artifact_manager.save_artifact(scaler, "scaler")
+        self.artifact_manager.save_artifact(pca, "pca")
+        
+        return X_train_scaled, X_train_pca
+
+    def transform(self, X_test: pd.DataFrame) -> tuple:
+        """
+        Daha önceden Train verisi ile eğitilmiş olan ve diske kaydedilen Scaler 
+        ve PCA objelerini yükleyerek Test veya Validation setine uygular.
+        (Burada asla fit yapılmaz, bu sayede sızıntı önlenir).
+        
+        Args:
+            X_test (pd.DataFrame): Özellikleri içeren Validation/Test seti
+            
+        Returns:
+            tuple: (X_test_scaled, X_test_pca)
+        """
+        # Kaydedilmiş nesneleri yükle
+        scaler = self.artifact_manager.load_artifact("scaler")
+        pca = self.artifact_manager.load_artifact("pca")
+        
+        # Eksik verileri doldur
+        X_test = X_test.ffill().bfill()
+        
+        # Transform işlemlerini uygula
+        X_scaled_array = scaler.transform(X_test)
+        
+        X_test_scaled = pd.DataFrame(
+            X_scaled_array, 
+            index=X_test.index, 
+            columns=X_test.columns
+        )
+        
+        X_pca_array = pca.transform(X_test_scaled)
+        
+        X_test_pca = pd.DataFrame(
+            X_pca_array, 
+            index=X_test.index, 
+            columns=['PC1']
+        )
+        
+        return X_test_scaled, X_test_pca
+
+
+================================================================================
+
+Dosya: src/data/splitter/__init__.py
+------------------------------------
+from src.data.splitter.base import ISplitStrategy
+from src.data.splitter.skab import SkabGroupFoldStrategy
+from src.data.splitter.batadal import BatadalTemporalSplitStrategy
+
+__all__ = [
+    "ISplitStrategy",
+    "SkabGroupFoldStrategy",
+    "BatadalTemporalSplitStrategy"
+]
+
+
+================================================================================
+
+Dosya: src/data/splitter/base.py
+--------------------------------
+from abc import ABC, abstractmethod
+import pandas as pd
+from typing import Tuple, Generator
+
+class ISplitStrategy(ABC):
+    """
+    Veri bölme (Data Splitting) işlemleri için Strategy arayüzü.
+    Her veri setinin kendine özgü (zaman serisi, grup bazlı vs.) bir bölme kuralı
+    olabileceği için bu arayüz tasarlanmıştır.
+    """
+
+    @abstractmethod
+    def split(self, df: pd.DataFrame) -> Generator[Tuple[pd.DataFrame, ...], None, None]:
+        """
+        Gelen DataFrame'i Train, Validation ve Test (veya sadece Train/Test)
+        setlerine böler.
+        
+        Args:
+            df (pd.DataFrame): Bölünecek tam veri seti
+            
+        Yields:
+            Tuple[pd.DataFrame, ...]: (train, test) veya (train, val, test) gibi
+            DataFrame tuple'ları döner. Tüm split stratejileri iteration (döngü)
+            desteklemelidir.
+        """
+        pass
+
+
+================================================================================
+
+Dosya: src/data/splitter/batadal.py
+-----------------------------------
+import pandas as pd
+from typing import Tuple, Generator
+
+from src.data.splitter.base import ISplitStrategy
+
+class BatadalTemporalSplitStrategy(ISplitStrategy):
+    """
+    BATADAL veri seti için zamansal sıra bozulmadan (shuffle=False) 
+    %60 Train, %20 Validation, %20 Test olacak şekilde ardışık (chronological) bölme yapar.
+    """
+
+    def split(self, df: pd.DataFrame) -> Generator[Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame], None, None]:
+        """
+        Zaman sırasını bozmadan DataFrame'i üçe böler.
+        
+        Args:
+            df (pd.DataFrame): Zaman sıralı DataFrame. Index'inin zamana göre 
+                               sıralı olduğu varsayılır.
+            
+        Yields:
+            Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: (train_df, val_df, test_df)
+        """
+        # Veri setinin indeksine göre sıralı olduğundan emin olalım
+        df_sorted = df.sort_index()
+        
+        n_samples = len(df_sorted)
+        train_end = int(n_samples * 0.6)
+        val_end = int(n_samples * 0.8)
+        
+        train_df = df_sorted.iloc[:train_end].copy()
+        val_df = df_sorted.iloc[train_end:val_end].copy()
+        test_df = df_sorted.iloc[val_end:].copy()
+        
+        yield train_df, val_df, test_df
+
+
+================================================================================
+
+Dosya: src/data/splitter/skab.py
+--------------------------------
+import pandas as pd
+from sklearn.model_selection import GroupKFold
+from typing import Generator, Tuple
+
+from src.core.config_manager import ConfigurationManager
+from src.data.splitter.base import ISplitStrategy
+
+class SkabGroupFoldStrategy(ISplitStrategy):
+    """
+    SKAB veri seti için GroupKFold stratejisi.
+    Veri sızıntısını önlemek için aynı 'source_file' değerine sahip verilerin
+    hem train hem test setinde aynı anda bulunmamasını sağlar.
+    """
+
+    def __init__(self):
+        self.config = ConfigurationManager()
+        self.n_splits = self.config.get("experiment.k_folds", 5)
+
+    def split(self, df: pd.DataFrame) -> Generator[Tuple[pd.DataFrame, pd.DataFrame], None, None]:
+        """
+        GroupKFold uygulayarak train ve test setlerini oluşturur.
+        Validation seti ayrıca istenirse, bu train seti içinden daha sonra 
+        zaman sırası korunarak ayrılabilir.
+        
+        Args:
+            df (pd.DataFrame): 'source_file' sütununu barındıran DataFrame.
+            
+        Yields:
+            (train_df, test_df) tuple generator'ı.
+        """
+        if "source_file" not in df.columns:
+            raise ValueError("SkabGroupFoldStrategy gereksinimi olan 'source_file' sütunu bulunamadı.")
+            
+        gkf = GroupKFold(n_splits=self.n_splits)
+        groups = df["source_file"]
+        
+        # Scikit-learn indeks (integer) bazlı böler, bu yüzden iloc kullanıyoruz
+        for train_idx, test_idx in gkf.split(df, groups=groups):
+            train_df = df.iloc[train_idx].copy()
+            test_df = df.iloc[test_idx].copy()
+            
+            # Zaman sırasını garanti altına almak için index'e göre sıralama (genelde sıralıdır ama tedbiren)
+            train_df.sort_index(inplace=True)
+            test_df.sort_index(inplace=True)
+            
+            yield train_df, test_df
+
+
+================================================================================
+
+Dosya: src/models/__init__.py
 -----------------------------
 """Models module containing Deep Learning, Automata and Interface definitions."""
 
@@ -540,7 +1162,7 @@ __all__ = ["IAnomalyDetector"]
 
 ================================================================================
 
-Dosya: src\models\automata\__init__.py
+Dosya: src/models/automata/__init__.py
 --------------------------------------
 from src.models.automata.paa import PAATransformer
 from src.models.automata.sax import SAXTransformer
@@ -561,7 +1183,7 @@ __all__ = [
 
 ================================================================================
 
-Dosya: src\models\automata\detector.py
+Dosya: src/models/automata/detector.py
 --------------------------------------
 import pandas as pd
 import numpy as np
@@ -581,8 +1203,10 @@ class AutomataDetector(IAnomalyDetector):
     mantığıyla çalışan Siyah Kutu olmayan (Açıklanabilir) Anomali Tespit Modeli.
     """
 
-    def __init__(self, experiment_id: str = "default"):
+    def __init__(self, experiment_id: str = "default", window_size: Optional[int] = None, alphabet_size: Optional[int] = None):
         self.experiment_id = experiment_id
+        self.window_size = window_size
+        self.alphabet_size = alphabet_size
         self.config = ConfigurationManager()
         self.artifact_manager = ExperimentArtifactManager(experiment_id=experiment_id)
         
@@ -604,11 +1228,12 @@ class AutomataDetector(IAnomalyDetector):
         Pipeline bileşenlerini (Transformer'ları) örnekler.
         """
         self.paa = PAATransformer()
-        self.sax = SAXTransformer()
-        self.slider = SlidingWindowExtractor()
+        self.sax = SAXTransformer(alphabet_size=self.alphabet_size)
+        self.slider = SlidingWindowExtractor(window_size=self.window_size)
         self.vocab_manager = VocabularyManager(experiment_id=self.experiment_id)
+        self.path_window = self.config.get("automata.path_window", getattr(self.slider, 'window_size', 4))
 
-    def _pipeline_transform(self, series: np.ndarray) -> List[str]:
+    def _pipeline_transform(self, series: np.ndarray, source_files: Optional[pd.Series] = None) -> List[Optional[str]]:
         """
         PC1 serisini alır, PAA, SAX ve Sliding Window uygulayıp kelime listesi döner.
         """
@@ -619,10 +1244,10 @@ class AutomataDetector(IAnomalyDetector):
         n_segments = max(1, len(series) // self.paa_factor)
         paa_values = self.paa.transform(series, n_segments=n_segments)
         sax_symbols = self.sax.transform(paa_values)
-        words = self.slider.extract(sax_symbols)
+        words = self.slider.extract(sax_symbols, source_files=source_files)
         return words
 
-    def train(self, X_train: pd.DataFrame, y_train: pd.Series, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.Series] = None) -> None:
+    def train(self, X_train: pd.DataFrame, y_train: pd.Series, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.Series] = None, **kwargs) -> None:
         """
         Otomata modelini eğitir:
         1. PC1 verisini kelimelere (pattern) dönüştürür.
@@ -632,11 +1257,10 @@ class AutomataDetector(IAnomalyDetector):
         self.build_model()
         assert self.vocab_manager is not None
         
-        # X_train bir DataFrame, biz PC1 kolonunu (veya ilk kolonu) alıyoruz
         series = np.asarray(X_train.iloc[:, 0].to_numpy(), dtype=float)
         
         # 1. Pipeline dönüşümü
-        words = self._pipeline_transform(series)
+        words = self._pipeline_transform(series, source_files=kwargs.get("source_files_train"))
         
         # Normal (y=0) kelimeleri ayıklamak için indeks haritalaması yapalım
         # Kayan pencere (window_size) boyutu w ise, elde edilen i. kelime
@@ -647,16 +1271,19 @@ class AutomataDetector(IAnomalyDetector):
         normal_transitions = [] # (current_word, next_word)
         
         for i in range(len(words)):
+            if words[i] is None:
+                continue
+                
             # Kelimenin orijinal serideki son elemanının indeksi
-            original_idx = min((i * self.paa_factor) + window_size - 1, len(y_train) - 1)
+            original_idx = min((i + window_size - 1) * self.paa_factor, len(y_train) - 1)
             
             # Sadece normal verileri (y=0) modele öğretmek istiyoruz
             if y_train.iloc[original_idx] == 0:
                 normal_words.append(words[i])
                 
             # Geçiş (Transition) sayımı: Eğitime y=0 iken ardışık kelime geçişleri dahil edilir
-            if i < len(words) - 1:
-                next_original_idx = min(((i + 1) * self.paa_factor) + window_size - 1, len(y_train) - 1)
+            if i < len(words) - 1 and words[i+1] is not None:
+                next_original_idx = min(((i + 1) + window_size - 1) * self.paa_factor, len(y_train) - 1)
                 # Geçişin her iki tarafı da normal olmalı ki sağlıklı bir "normal geçiş" öğrenebilelim
                 if y_train.iloc[original_idx] == 0 and y_train.iloc[next_original_idx] == 0:
                     normal_transitions.append((words[i], words[i+1]))
@@ -681,7 +1308,7 @@ class AutomataDetector(IAnomalyDetector):
         self.artifact_manager.save_dict_artifact(self.transition_matrix, "automata_transitions")
         print("Automata eğitimi tamamlandı ve sözlük kaydedildi.")
 
-    def predict(self, X_test: pd.DataFrame) -> np.ndarray:
+    def predict(self, X_test: pd.DataFrame, **kwargs) -> np.ndarray:
         """
         Test verisi için anomali tahmini yapar.
         Geçiş olasılığı (transition probability) düşükse veya geçiş hiç yoksa anomali sayılır.
@@ -697,38 +1324,53 @@ class AutomataDetector(IAnomalyDetector):
         assert self.slider is not None
             
         series = np.asarray(X_test.iloc[:, 0].to_numpy(), dtype=float)
-        words = self._pipeline_transform(series)
+        words = self._pipeline_transform(series, source_files=kwargs.get("source_files_test"))
         
         anomaly_scores = []
         predictions = []
         
         # Çıkarım (Inference)
         for i in range(len(words)):
-            if i == 0:
-                # İlk kelime için önceki bir durum yok, anomali skoru 0 kabul edilir
+            if words[i] is None:
                 anomaly_scores.append(0.0)
                 predictions.append(0)
                 continue
                 
-            prev_word = self.vocab_manager.get_state(words[i-1])
-            curr_word = self.vocab_manager.get_state(words[i])
+            path_prob = 1.0
+            start_idx = max(0, i - self.path_window + 1)
+            valid_transitions = 0
             
-            # Geçiş olasılığını bul (yoksa 0)
-            prob = 0.0
-            if prev_word in self.transition_matrix and curr_word in self.transition_matrix[prev_word]:
-                prob = self.transition_matrix[prev_word][curr_word]
+            for k in range(start_idx, i):
+                w_k = words[k]
+                w_k1 = words[k+1]
                 
-            # Confidence Score = Geçiş olasılığı
-            # Anomaly Score = 1 - Confidence Score
-            anomaly_score = 1.0 - prob
+                if w_k is None or w_k1 is None:
+                    continue
+                
+                prev_w = self.vocab_manager.get_state(w_k)
+                curr_w = self.vocab_manager.get_state(w_k1)
+                
+                p = 0.0
+                if prev_w in self.transition_matrix and curr_w in self.transition_matrix[prev_w]:
+                    p = self.transition_matrix[prev_w][curr_w]
+                    
+                path_prob *= p
+                valid_transitions += 1
+                
+            if valid_transitions == 0:
+                anomaly_score = 0.0
+            else:
+                anomaly_score = 1.0 - path_prob
+                
             anomaly_scores.append(anomaly_score)
-            
-            # Eşiği aşarsa anomali (1)
             is_anomaly = 1 if anomaly_score >= self.threshold else 0
             predictions.append(is_anomaly)
             
         # Orijinal X_test boyutuna uydurmak için başa padding yapalım
-        pad_length = len(series) - len(predictions)
+        n_segments = max(1, len(series) // self.paa_factor)
+        pad_length = len(series) - (n_segments - self.slider.window_size + 1)
+        if pad_length < 0:
+            pad_length = 0
         
         if pad_length > 0:
             padded_predictions = np.pad(predictions, (pad_length, 0), mode='constant', constant_values=0)
@@ -740,7 +1382,7 @@ class AutomataDetector(IAnomalyDetector):
 
 ================================================================================
 
-Dosya: src\models\automata\paa.py
+Dosya: src/models/automata/paa.py
 ---------------------------------
 import numpy as np
 
@@ -784,11 +1426,11 @@ class PAATransformer:
 
 ================================================================================
 
-Dosya: src\models\automata\sax.py
+Dosya: src/models/automata/sax.py
 ---------------------------------
 import numpy as np
 from scipy.stats import norm
-from typing import List
+from typing import List, Optional
 from src.core.config_manager import ConfigurationManager
 
 class SAXTransformer:
@@ -798,9 +1440,9 @@ class SAXTransformer:
     eğrisinin altındaki alanlara (equiprobable regions) göre harflere (sembollere) dönüştürür.
     """
     
-    def __init__(self):
+    def __init__(self, alphabet_size: Optional[int] = None):
         self.config = ConfigurationManager()
-        self.alphabet_size = self.config.get("automata.alphabet_size", 5)
+        self.alphabet_size = alphabet_size if alphabet_size is not None else self.config.get("automata.alphabet_size", 5)
         
         # Alfabe boyutu kadar harf (a, b, c, d, e...)
         self.alphabet = [chr(97 + i) for i in range(self.alphabet_size)]
@@ -841,9 +1483,10 @@ class SAXTransformer:
 
 ================================================================================
 
-Dosya: src\models\automata\sliding_window.py
+Dosya: src/models/automata/sliding_window.py
 --------------------------------------------
-from typing import List
+from typing import List, Optional
+import pandas as pd
 from src.core.config_manager import ConfigurationManager
 
 class SlidingWindowExtractor:
@@ -852,31 +1495,37 @@ class SlidingWindowExtractor:
     mantığı ile alt dizeler (kelimeler/patternler) çıkaran sınıf.
     """
     
-    def __init__(self):
+    def __init__(self, window_size: Optional[int] = None):
         self.config = ConfigurationManager()
         # Automata için özel window size (DL window size'dan farklı olabilir)
-        self.window_size = self.config.get("automata.window_size", 5)
+        self.window_size = window_size if window_size is not None else self.config.get("automata.window_size", 5)
 
-    def extract(self, symbols: List[str]) -> List[str]:
+    def extract(self, symbols: List[str], source_files: Optional[pd.Series] = None) -> List[Optional[str]]:
         """
         Ardışık sembolleri window_size uzunluğunda kelimeler halinde birleştirir.
-        Örnek: symbols=['a','b','c','d'], window_size=3 -> ['abc', 'bcd']
+        Data Leakage'i engellemek için cross-boundary pencereleri None olarak döner.
         
         Args:
             symbols (List[str]): SAX çıktısı olan tekil harflerin listesi.
+            source_files (pd.Series, optional): Her harfin/satırın ait olduğu kaynak dosya serisi.
             
         Returns:
-            List[str]: Pencere boyutu kadar uzunluktaki kelime listesi.
+            List[Optional[str]]: Pencere boyutu kadar uzunluktaki kelime listesi veya None (sınır ihlali varsa).
         """
         words = []
         n = len(symbols)
         
         if n < self.window_size:
-            # Eğer toplam sembol sayısı pencere boyutundan küçükse
-            # olanı tek bir kelime olarak dön
             return ["".join(symbols)] if n > 0 else []
             
+        sf_vals = source_files.values if (source_files is not None and len(source_files) >= n) else None
+
         for i in range(n - self.window_size + 1):
+            if sf_vals is not None:
+                if sf_vals[i] != sf_vals[i + self.window_size - 1]:
+                    words.append(None)
+                    continue
+                    
             word = "".join(symbols[i : i + self.window_size])
             words.append(word)
             
@@ -885,7 +1534,7 @@ class SlidingWindowExtractor:
 
 ================================================================================
 
-Dosya: src\models\automata\vocabulary.py
+Dosya: src/models/automata/vocabulary.py
 ----------------------------------------
 from typing import List, Dict
 from src.core.artifact_manager import ExperimentArtifactManager
@@ -989,7 +1638,7 @@ class VocabularyManager:
 
 ================================================================================
 
-Dosya: src\models\base.py
+Dosya: src/models/base.py
 -------------------------
 from abc import ABC, abstractmethod
 from typing import Optional
@@ -1038,7 +1687,7 @@ class IAnomalyDetector(ABC):
 
 ================================================================================
 
-Dosya: src\models\deep_learning\__init__.py
+Dosya: src/models/deep_learning/__init__.py
 -------------------------------------------
 from src.models.deep_learning.dataset import SlidingWindowDataset
 from src.models.deep_learning.adapter import DeepLearningAdapter
@@ -1057,7 +1706,7 @@ __all__ = [
 
 ================================================================================
 
-Dosya: src\models\deep_learning\adapter.py
+Dosya: src/models/deep_learning/adapter.py
 ------------------------------------------
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
@@ -1067,6 +1716,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import pandas as pd
 import numpy as np
+import random
 
 from src.models.base import IAnomalyDetector
 from src.models.deep_learning.dataset import SlidingWindowDataset
@@ -1106,18 +1756,32 @@ class DeepLearningAdapter(IAnomalyDetector):
         )
         self.model.to(self.device)
 
-    def train(self, X_train: pd.DataFrame, y_train: pd.Series, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.Series] = None) -> None:
+    def _set_seed(self, seed: int):
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        np.random.seed(seed)
+        random.seed(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+    def train(self, X_train: pd.DataFrame, y_train: pd.Series, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.Series] = None, **kwargs) -> None:
+        seed = kwargs.get("seed")
+        if seed is None:
+            seed = self.config.get("experiment.current_seed", 42)
+        assert isinstance(seed, int)
+        self._set_seed(seed)
+        
         if self.model is None:
             self.build_model()
         
         assert self.model is not None  # Pyright narrowing
             
-        train_dataset = SlidingWindowDataset(X_train, y_train, self.window_size)
+        train_dataset = SlidingWindowDataset(X_train, y_train, self.window_size, source_files=kwargs.get("source_files_train"))
         train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
         
         val_loader = None
         if X_val is not None and y_val is not None:
-            val_dataset = SlidingWindowDataset(X_val, y_val, self.window_size)
+            val_dataset = SlidingWindowDataset(X_val, y_val, self.window_size, source_files=kwargs.get("source_files_val"))
             val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
             
         criterion = nn.BCELoss()
@@ -1174,14 +1838,14 @@ class DeepLearningAdapter(IAnomalyDetector):
             else:
                 print(f"Epoch {epoch+1}/{self.epochs} - Train Loss: {train_loss:.4f}")
 
-    def predict(self, X_test: pd.DataFrame) -> np.ndarray:
+    def predict(self, X_test: pd.DataFrame, **kwargs) -> np.ndarray:
         if self.model is None:
             raise ValueError("Model henüz oluşturulmamış veya eğitilmemiş!")
             
         self.model.eval()
         
         dummy_y = pd.Series(0, index=X_test.index)
-        test_dataset = SlidingWindowDataset(X_test, dummy_y, self.window_size)
+        test_dataset = SlidingWindowDataset(X_test, dummy_y, self.window_size, source_files=kwargs.get("source_files_test"))
         test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
         
         predictions = []
@@ -1199,7 +1863,7 @@ class DeepLearningAdapter(IAnomalyDetector):
 
 ================================================================================
 
-Dosya: src\models\deep_learning\cnn.py
+Dosya: src/models/deep_learning/cnn.py
 --------------------------------------
 import torch
 import torch.nn as nn
@@ -1266,51 +1930,62 @@ class CNN1DModel(nn.Module):
 
 ================================================================================
 
-Dosya: src\models\deep_learning\dataset.py
+Dosya: src/models/deep_learning/dataset.py
 ------------------------------------------
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
 
+from typing import Optional
+
 class SlidingWindowDataset(Dataset):
     """
     Zaman serisi verisini PyTorch tensörlerine (Sliding Window formatında)
-    dönüştüren sınıf.
+    dönüştüren sınıf. Data leakage'i önlemek için cross-boundary pencereleri filtreler.
     """
 
-    def __init__(self, X: pd.DataFrame, y: pd.Series, window_size: int):
+    def __init__(self, X: pd.DataFrame, y: pd.Series, window_size: int, source_files: Optional[pd.Series] = None):
         """
         Args:
             X (pd.DataFrame): Özellikler matrisi (samples x features)
             y (pd.Series): Hedef değişken serisi
             window_size (int): Kayan pencere (sliding window) boyutu
+            source_files (pd.Series, optional): Her satırın hangi dosyadan/gruba ait olduğu. Cross-boundary pencereleri önlemek için.
         """
         self.X_values = X.values
         self.y_values = y.values
         self.window_size = window_size
 
-        # Olabilecek maksimum pencere sayısı
-        self.n_samples = len(self.X_values) - self.window_size + 1
+        n_total = len(self.X_values) - self.window_size + 1
+        
+        self.valid_indices = []
+        if source_files is not None and len(source_files) == len(self.X_values):
+            sf_vals = source_files.values
+            for i in range(n_total):
+                if sf_vals[i] == sf_vals[i + self.window_size - 1]:
+                    self.valid_indices.append(i)
+        else:
+            self.valid_indices = list(range(n_total)) if n_total > 0 else []
 
     def __len__(self) -> int:
-        return max(0, self.n_samples)
+        return len(self.valid_indices)
 
     def __getitem__(self, index: int) -> tuple:
         """
         Args:
-            index (int): Pencere başlangıç indeksi
+            index (int): Geçerli pencere başlangıç indeksi
 
         Returns:
             tuple: (X_tensor, y_tensor)
-                X_tensor boyutu: (window_size, num_features)
-                y_tensor: İlgili pencerenin son elemanına karşılık gelen etiket
         """
+        real_idx = self.valid_indices[index]
+        
         # Window'u al
-        x_window = self.X_values[index : index + self.window_size]
+        x_window = self.X_values[real_idx : real_idx + self.window_size]
 
         # Etiketi al (genellikle window'un son elemanının etiketi alınır)
-        y_label = self.y_values[index + self.window_size - 1]
+        y_label = self.y_values[real_idx + self.window_size - 1]
 
         # Tensörlere dönüştür
         x_tensor = torch.tensor(x_window, dtype=torch.float32)
@@ -1321,7 +1996,7 @@ class SlidingWindowDataset(Dataset):
 
 ================================================================================
 
-Dosya: src\models\deep_learning\factory.py
+Dosya: src/models/deep_learning/factory.py
 ------------------------------------------
 import torch.nn as nn
 from src.models.deep_learning.cnn import CNN1DModel
@@ -1357,7 +2032,7 @@ class DeepLearningFactory:
 
 ================================================================================
 
-Dosya: src\models\deep_learning\gru.py
+Dosya: src/models/deep_learning/gru.py
 --------------------------------------
 import torch
 import torch.nn as nn
@@ -1416,14 +2091,457 @@ class GRUModel(nn.Module):
 
 ================================================================================
 
-Dosya: src\orchestration\__init__.py
+Dosya: src/orchestration/__init__.py
 ------------------------------------
-"""Orchestration module containing ExperimentOrchestrator."""
+from src.orchestration.event_bus import EventBus
+from src.orchestration.events import (
+    Event,
+    ModelTrainedEvent,
+    EvaluationCompletedEvent,
+    AutomataDecisionEvent,
+    SensitivityAnalysisEvent
+)
+from src.orchestration.orchestrator import ExperimentOrchestrator
+
+__all__ = [
+    "EventBus",
+    "Event",
+    "ModelTrainedEvent",
+    "EvaluationCompletedEvent",
+    "AutomataDecisionEvent",
+    "SensitivityAnalysisEvent",
+    "ExperimentOrchestrator"
+]
 
 
 ================================================================================
 
-Dosya: src\reporting\__init__.py
+Dosya: src/orchestration/event_bus.py
+-------------------------------------
+from typing import Callable, Dict, List, Type
+from .events import Event
+
+class EventBus:
+    """
+    Observer pattern tabanlı, olayların (event) yayınlandığı
+    ve dinleyicilerin (listener) abone olduğu merkezi iletişim kanalı.
+    """
+    
+    # Singleton pattern implementation for global access
+    _instance = None
+    _subscribers: Dict[Type[Event], List[Callable[[Event], None]]]
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(EventBus, cls).__new__(cls)
+            cls._instance._subscribers = {}
+        return cls._instance
+
+    def subscribe(self, event_type: Type[Event], callback: Callable[[Event], None]) -> None:
+        """Belirli bir olay türüne dinleyici kaydeder."""
+        if event_type not in self._subscribers:
+            self._subscribers[event_type] = []
+        self._subscribers[event_type].append(callback)
+
+    def publish(self, event: Event) -> None:
+        """Oluşan bir olayı, abone olan tüm dinleyicilere iletir."""
+        event_type = type(event)
+        if event_type in self._subscribers:
+            for callback in self._subscribers[event_type]:
+                callback(event)
+
+
+================================================================================
+
+Dosya: src/orchestration/events.py
+----------------------------------
+from dataclasses import dataclass, field
+from typing import Dict, Any, List, Optional
+
+@dataclass
+class Event:
+    """Base class for all orchestration and reporting events."""
+    pass
+
+@dataclass
+class ModelTrainedEvent(Event):
+    """Fired when a model completes training."""
+    model_name: str
+    dataset_name: str
+    seed: int
+    fold_idx: Optional[int] = None
+    training_duration_seconds: float = 0.0
+
+@dataclass
+class EvaluationCompletedEvent(Event):
+    """Fired when an evaluation scenario is completed."""
+    scenario: str
+    train_dataset: str
+    test_dataset: str
+    model_name: str
+    seed: int
+    metrics: Dict[str, float]
+    fold_idx: Optional[int] = None
+    note: str = ""
+
+@dataclass
+class AutomataDecisionEvent(Event):
+    """Fired during the Unseen Pattern scenario specifically for Automata."""
+    scenario: str
+    unseen_rate: float
+    mapping_log: List[Dict[str, Any]]
+    metrics: Dict[str, float]
+    fold_idx: Optional[int] = None
+    note: str = ""
+
+@dataclass
+class SensitivityAnalysisEvent(Event):
+    """Fired after parameter sensitivity Grid Search is completed."""
+    results: List[Dict[str, Any]]
+
+
+================================================================================
+
+Dosya: src/orchestration/orchestrator.py
+----------------------------------------
+import pandas as pd
+import numpy as np
+from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
+from typing import Optional
+
+from src.core.config_manager import ConfigurationManager
+from src.core.runtime_logger import RuntimeLogger
+from src.data.loader.factory import DataLoaderFactory
+from src.data.splitter.skab import SkabGroupFoldStrategy
+from src.data.splitter.batadal import BatadalTemporalSplitStrategy
+from src.data.preprocess.pipeline import PreprocessorPipeline
+from src.models.deep_learning.adapter import DeepLearningAdapter
+from src.models.automata.detector import AutomataDetector
+from src.models.automata.vocabulary import UnseenHandler, levenshtein_distance
+from src.orchestration.event_bus import EventBus
+from src.orchestration.events import (
+    ModelTrainedEvent,
+    EvaluationCompletedEvent,
+    AutomataDecisionEvent,
+    SensitivityAnalysisEvent
+)
+
+
+def compute_metrics(y_true, y_pred) -> dict:
+    y_pred_bin = (np.array(y_pred) >= 0.5).astype(int).tolist()
+    return {
+        "accuracy": float(accuracy_score(y_true, y_pred_bin)),
+        "precision": float(precision_score(y_true, y_pred_bin, zero_division=0)),
+        "recall": float(recall_score(y_true, y_pred_bin, zero_division=0)),
+        "f1": float(f1_score(y_true, y_pred_bin, zero_division=0))
+    }
+
+
+class ExperimentOrchestrator:
+    """
+    Deneylerin kontrol edildiği ana orkestrasyon sınıfı.
+    Cross-validation (Fold loop) desteği ile tüm verileri fold bazında eğitir ve test eder.
+    """
+
+    def __init__(self):
+        self.config = ConfigurationManager()
+        self.event_bus = EventBus()
+        # Her fold için eğitilmiş modelleri ve pipelineları saklayacağız
+        self._trained_models = {}
+        self._pipelines = {}
+
+    def run_experiment(self, dataset_name: str):
+        """Ana akış: tüm fold'lar için CV döngüsü."""
+        loader = DataLoaderFactory.get_loader(dataset_name)
+        df = loader.load_data()
+
+        splits = self._get_splits(df, dataset_name)
+        
+        for fold_idx, split_data in enumerate(splits):
+            if len(split_data) == 2:
+                train_df, test_df = split_data
+                val_df = None
+            else:
+                train_df, val_df, test_df = split_data
+                
+            # ADIM 1: Fold için modelleri eğit
+            self._train_all_models(train_df, val_df, dataset_name, fold_idx)
+
+            # ADIM 2: Fold için senaryoları değerlendir
+            self._run_original_scenario(train_df, test_df, dataset_name, fold_idx)
+            self._run_noise_scenario(train_df, test_df, dataset_name, fold_idx)
+            self._run_unseen_pattern_scenario(train_df, test_df, dataset_name, fold_idx)
+            
+        # Ek senaryolar (ilk fold veya tüm datada yapılabilecekler)
+        self.run_cross_dataset_scenario()
+        self.run_parameter_sensitivity_scenario(dataset_name)
+        
+    def _get_splits(self, df: pd.DataFrame, dataset_name: str):
+        if dataset_name.lower() == "skab":
+            splitter = SkabGroupFoldStrategy()
+            return list(splitter.split(df))
+        elif dataset_name.lower() == "batadal":
+            splitter = BatadalTemporalSplitStrategy()
+            return list(splitter.split(df))
+        raise ValueError(f"Unknown dataset for split: {dataset_name}")
+
+    def _get_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        drop_cols = ["anomaly", "source_file", "source_group"]
+        return df.drop(columns=[c for c in drop_cols if c in df.columns])
+
+    def _train_all_models(self, train_df: pd.DataFrame, val_df: Optional[pd.DataFrame], dataset_name: str, fold_idx: int):
+        """Eğitimi fold bazlı yapar ve sonuçları kaydeder."""
+        pipeline = PreprocessorPipeline(experiment_id=f"exp_{dataset_name}_fold{fold_idx}")
+        self._pipelines[fold_idx] = pipeline
+        
+        X_train_scaled, X_train_pca = pipeline.fit_transform(self._get_features(train_df))
+        y_train = train_df["anomaly"]
+        source_files_train = train_df.get("source_file", None)
+        
+        if val_df is not None:
+            X_val_scaled, _ = pipeline.transform(self._get_features(val_df))
+            y_val = val_df["anomaly"]
+            source_files_val = val_df.get("source_file", None)
+        else:
+            X_val_scaled, y_val, source_files_val = None, None, None
+            
+        seeds = self.config.get("experiment.random_seeds", [42])
+        logger = RuntimeLogger(experiment_id=f"exp_{dataset_name}_fold{fold_idx}")
+        
+        # DL Modelleri
+        for seed in seeds:
+            for model_name in ["cnn", "gru"]:
+                key = f"fold_{fold_idx}_{model_name}_seed{seed}"
+                adapter = DeepLearningAdapter(model_name=model_name, n_features=X_train_scaled.shape[1])
+                
+                with logger.measure_time(key, "Training"):
+                    adapter.train(
+                        X_train_scaled, y_train, X_val_scaled, y_val, 
+                        seed=seed, 
+                        source_files_train=source_files_train, 
+                        source_files_val=source_files_val
+                    )
+                    
+                self._trained_models[key] = adapter
+                self.event_bus.publish(ModelTrainedEvent(model_name=model_name, dataset_name=dataset_name, seed=seed, fold_idx=fold_idx))
+
+        # Automata Modeli
+        automata = AutomataDetector(experiment_id=f"exp_{dataset_name}_fold{fold_idx}")
+        key_automata = f"fold_{fold_idx}_automata_seed42"
+        with logger.measure_time("automata", "Training"):
+            automata.train(X_train_pca, y_train, source_files_train=source_files_train)
+            
+        self._trained_models[key_automata] = automata
+        self.event_bus.publish(ModelTrainedEvent(model_name="automata", dataset_name=dataset_name, seed=42, fold_idx=fold_idx))
+
+    def _run_original_scenario(self, train_df: pd.DataFrame, test_df: pd.DataFrame, dataset_name: str, fold_idx: int):
+        pipeline = self._pipelines[fold_idx]
+        X_test_scaled, X_test_pca = pipeline.transform(self._get_features(test_df))
+        y_test = test_df["anomaly"]
+        source_files_test = test_df.get("source_file", None)
+        
+        # DL
+        seeds = self.config.get("experiment.random_seeds", [42])
+        for seed in seeds:
+            for model_name in ["cnn", "gru"]:
+                key = f"fold_{fold_idx}_{model_name}_seed{seed}"
+                model = self._trained_models[key]
+                preds = model.predict(X_test_scaled, source_files_test=source_files_test)
+                
+                self.event_bus.publish(EvaluationCompletedEvent(
+                    scenario="original",
+                    train_dataset=dataset_name, test_dataset=dataset_name,
+                    model_name=model_name, seed=seed, metrics=compute_metrics(y_test, preds),
+                    fold_idx=fold_idx
+                ))
+                
+        # Automata
+        automata = self._trained_models[f"fold_{fold_idx}_automata_seed42"]
+        preds = automata.predict(X_test_pca, source_files_test=source_files_test)
+        self.event_bus.publish(EvaluationCompletedEvent(
+            scenario="original",
+            train_dataset=dataset_name, test_dataset=dataset_name,
+            model_name="automata", seed=42, metrics=compute_metrics(y_test, preds),
+            fold_idx=fold_idx
+        ))
+
+    def _run_noise_scenario(self, train_df: pd.DataFrame, test_df: pd.DataFrame, dataset_name: str, fold_idx: int):
+        noise_std = self.config.get("experiment.noise_std", 0.1)
+        pipeline = self._pipelines[fold_idx]
+        
+        X_test_scaled, X_test_pca = pipeline.transform(self._get_features(test_df))
+        y_test = test_df["anomaly"]
+        source_files_test = test_df.get("source_file", None)
+        
+        seeds = self.config.get("experiment.random_seeds", [42])
+        
+        for seed in seeds:
+            np.random.seed(seed)
+            # DL için noisy test
+            noise_scaled = np.random.normal(0, noise_std, X_test_scaled.shape)
+            X_test_noisy_scaled = pd.DataFrame(
+                X_test_scaled.values + noise_scaled,
+                columns=X_test_scaled.columns,
+                index=X_test_scaled.index
+            )
+            
+            for model_name in ["cnn", "gru"]:
+                key = f"fold_{fold_idx}_{model_name}_seed{seed}"
+                model = self._trained_models[key]
+                preds = model.predict(X_test_noisy_scaled, source_files_test=source_files_test)
+                
+                self.event_bus.publish(EvaluationCompletedEvent(
+                    scenario="noise",
+                    train_dataset=dataset_name, test_dataset=dataset_name,
+                    model_name=model_name, seed=seed, metrics=compute_metrics(y_test, preds),
+                    fold_idx=fold_idx
+                ))
+                
+            # Automata için de seed bazlı ayrı noisy test
+            noise_pca = np.random.normal(0, noise_std, X_test_pca.shape)
+            X_test_noisy_pca = pd.DataFrame(
+                X_test_pca.values + noise_pca,
+                columns=X_test_pca.columns,
+                index=X_test_pca.index
+            )
+            automata = self._trained_models[f"fold_{fold_idx}_automata_seed42"]
+            preds_auto = automata.predict(X_test_noisy_pca, source_files_test=source_files_test)
+            self.event_bus.publish(EvaluationCompletedEvent(
+                scenario="noise",
+                train_dataset=dataset_name, test_dataset=dataset_name,
+                model_name="automata", seed=seed, metrics=compute_metrics(y_test, preds_auto),
+                fold_idx=fold_idx
+            ))
+
+    def _run_unseen_pattern_scenario(self, train_df: pd.DataFrame, test_df: pd.DataFrame, dataset_name: str, fold_idx: int):
+        pipeline = self._pipelines[fold_idx]
+        _, X_test_pca = pipeline.transform(self._get_features(test_df))
+        y_test = test_df["anomaly"]
+        source_files_test = test_df.get("source_file", None)
+        
+        automata: AutomataDetector = self._trained_models[f"fold_{fold_idx}_automata_seed42"]
+        assert automata.vocab_manager is not None
+        vocab = automata.vocab_manager.vocabulary
+        
+        series = X_test_pca.iloc[:, 0].to_numpy()
+        test_words = automata._pipeline_transform(series, source_files=source_files_test)
+        
+        # Filtreleme (None'lar hesaba katılmaz)
+        test_words_valid = [w for w in test_words if w is not None]
+        unseen_words = [w for w in test_words_valid if w not in vocab]
+        unseen_rate = len(unseen_words) / len(test_words_valid) if test_words_valid else 0
+        
+        mapping_log = []
+        for word in set(unseen_words):
+            mapped = UnseenHandler.handle_unseen(word, vocab)
+            dist = levenshtein_distance(word, mapped)
+            mapping_log.append({
+                "unseen_pattern": word,
+                "mapped_to": mapped,
+                "edit_distance": dist
+            })
+            
+        self.event_bus.publish(AutomataDecisionEvent(
+            scenario="unseen_pattern",
+            unseen_rate=unseen_rate,
+            mapping_log=mapping_log,
+            metrics=compute_metrics(y_test, automata.predict(X_test_pca, source_files_test=source_files_test)),
+            fold_idx=fold_idx
+        ))
+
+    def _prepare_pc1(self, dataset_name: str):
+        loader = DataLoaderFactory.get_loader(dataset_name)
+        df = loader.load_data()
+        
+        df_sorted = df.sort_index()
+        n_samples = len(df_sorted)
+        train_end = int(n_samples * 0.8)
+        
+        train_df = df_sorted.iloc[:train_end].copy()
+        test_df = df_sorted.iloc[train_end:].copy()
+        
+        pipeline = PreprocessorPipeline(experiment_id=f"exp_cross_{dataset_name}")
+        _, X_train_pca = pipeline.fit_transform(self._get_features(train_df))
+        _, X_test_pca = pipeline.transform(self._get_features(test_df))
+        
+        return (X_train_pca, train_df["anomaly"], train_df.get("source_file")), (X_test_pca, test_df["anomaly"], test_df.get("source_file"))
+
+    def run_cross_dataset_scenario(self):
+        datasets = {
+            "skab": self._prepare_pc1("skab"),
+            "batadal": self._prepare_pc1("batadal"),
+        }
+        
+        for train_name, ((X_tr, y_tr, sf_tr), _) in datasets.items():
+            for test_name, (_, (X_te, y_te, sf_te)) in datasets.items():
+                if train_name == test_name:
+                    continue
+                    
+                model = AutomataDetector(experiment_id=f"cross_{train_name}")
+                model.train(X_tr, y_tr, source_files_train=sf_tr)
+                preds = model.predict(X_te, source_files_test=sf_te)
+                
+                self.event_bus.publish(EvaluationCompletedEvent(
+                    scenario="cross_dataset",
+                    train_dataset=train_name,
+                    test_dataset=test_name,
+                    model_name="automata",
+                    seed=42,
+                    metrics=compute_metrics(y_te, preds),
+                    note="PC1 eksenleri farklı varyansı temsil eder"
+                ))
+
+    def run_parameter_sensitivity_scenario(self, dataset_name: str):
+        loader = DataLoaderFactory.get_loader(dataset_name)
+        df = loader.load_data()
+        splits = self._get_splits(df, dataset_name)
+        
+        # Sadece ilk fold (fold_idx=0) ile test edilebilir
+        split_data = splits[0]
+        if len(split_data) == 2:
+            train_df, test_df = split_data
+        else:
+            train_df, _, test_df = split_data
+            
+        pipeline = PreprocessorPipeline(experiment_id=f"exp_sens_{dataset_name}")
+        _, X_train_pca = pipeline.fit_transform(self._get_features(train_df))
+        _, X_test_pca = pipeline.transform(self._get_features(test_df))
+        
+        sf_tr = train_df.get("source_file", None)
+        sf_te = test_df.get("source_file", None)
+        
+        sensitivity_results = []
+        
+        for ws in [3, 4, 5, 6]:
+            for ab in [3, 4, 5, 6]:
+                temp_model = AutomataDetector(
+                    experiment_id=f"sens_{ws}_{ab}",
+                    window_size=ws,
+                    alphabet_size=ab
+                )
+                temp_model.train(X_train_pca, train_df["anomaly"], source_files_train=sf_tr)
+                preds = temp_model.predict(X_test_pca, source_files_test=sf_te)
+                
+                assert temp_model.vocab_manager is not None
+                state_count = len(temp_model.vocab_manager.vocabulary)
+                total_states = state_count * state_count
+                nonzero = sum(len(dest) for dest in temp_model.transition_matrix.values())
+                density = (nonzero / total_states) if total_states > 0 else 0
+                
+                sensitivity_results.append({
+                    "window_size": ws,
+                    "alphabet_size": ab,
+                    "metrics": compute_metrics(test_df["anomaly"], preds),
+                    "state_count": state_count,
+                    "transition_density": density
+                })
+                
+        self.event_bus.publish(SensitivityAnalysisEvent(results=sensitivity_results))
+
+
+================================================================================
+
+Dosya: src/reporting/__init__.py
 --------------------------------
 """Reporting module.
 
@@ -1433,21 +2551,92 @@ Contains ReportManager, StatisticalAnalyzer and ExplainabilityEngine.
 
 ================================================================================
 
-Dosya: src\visualization\__init__.py
+Dosya: src/visualization/__init__.py
 ------------------------------------
 """Visualization module containing VisualizationManager."""
 
 
 ================================================================================
 
-Dosya: tests\__init__.py
+Dosya: tests/__init__.py
 ------------------------
 """Tests module."""
 
 
 ================================================================================
 
-Dosya: tests\test_environment.py
+Dosya: tests/test_automata_components.py
+----------------------------------------
+import pytest
+import pandas as pd
+import numpy as np
+import os
+
+from src.models.automata.vocabulary import levenshtein_distance, UnseenHandler
+from src.models.automata.detector import AutomataDetector
+from src.core.config_manager import ConfigurationManager
+
+def test_levenshtein_distance():
+    """Levenshtein (edit distance) fonksiyonunu test eder."""
+    assert levenshtein_distance("abc", "abc") == 0
+    assert levenshtein_distance("abc", "abd") == 1
+    assert levenshtein_distance("kitten", "sitting") == 3
+    assert levenshtein_distance("flaw", "lawn") == 2
+
+def test_unseen_mapping():
+    """Görülmemiş sembollerin sözlükteki en yakın sembole haritalanmasını test eder."""
+    vocab = {"abcde": 1, "fghij": 1, "klmno": 1}
+    
+    # 'abxde' -> 'abcde' (1 değişiklik)
+    closest = UnseenHandler.handle_unseen("abxde", vocab)
+    assert closest == "abcde"
+    
+    # 'fghix' -> 'fghij' (1 değişiklik)
+    closest2 = UnseenHandler.handle_unseen("fghix", vocab)
+    assert closest2 == "fghij"
+    
+def test_automata_train_transition_matrix():
+    """AutomataDetector'ın train metodunun geçiş matrisi oluşturduğunu test eder."""
+    detector = AutomataDetector(experiment_id="test_exp_train")
+    
+    # Mock data: 50 uzunluğunda rastgele normal dağılımlı zaman serisi
+    X_train = pd.DataFrame(np.random.randn(50, 1), columns=["feature1"])
+    y_train = pd.Series([0] * 50)  # Hepsi normal (y=0)
+    
+    detector.train(X_train, y_train)
+    
+    assert detector.transition_matrix is not None
+    assert len(detector.transition_matrix) > 0, "Geçiş matrisi boş olamaz."
+    
+    # Tüm durum geçişlerinin toplam olasılıkları 1.0 olmalıdır
+    for current_word, next_words in detector.transition_matrix.items():
+        prob_sum = sum(next_words.values())
+        assert np.isclose(prob_sum, 1.0), f"Geçiş olasılıkları toplamı 1.0 değil: {prob_sum}"
+
+def test_automata_predict():
+    """AutomataDetector'ın predict işlemi sonrası doğru uzunlukta ve tipte döndüğünü test eder."""
+    detector = AutomataDetector(experiment_id="test_exp_predict")
+    
+    X_train = pd.DataFrame(np.random.randn(60, 1), columns=["feature1"])
+    y_train = pd.Series([0] * 60)
+    detector.train(X_train, y_train)
+    
+    test_len = 15
+    X_test = pd.DataFrame(np.random.randn(test_len, 1), columns=["feature1"])
+    
+    predictions = detector.predict(X_test)
+    
+    # Çıktı boyutu girdi boyutu ile aynı olmalı (padding test)
+    assert len(predictions) == test_len, f"Boyut uyumsuzluğu: Expected {test_len}, Got {len(predictions)}"
+    
+    # Çıktılar binary olmalı
+    for p in predictions:
+        assert p in [0, 1], "Tahmin çıktıları 0 veya 1 olmalıdır."
+
+
+================================================================================
+
+Dosya: tests/test_environment.py
 --------------------------------
 import sys
 
@@ -1459,9 +2648,106 @@ def test_python_version():
 
 def test_environment_setup():
     """Test if the core module is correctly accessible."""
-    import core
+    from src import core
 
     assert core is not None
 
 
 ================================================================================
+
+Dosya: tests/test_orchestrator.py
+---------------------------------
+import pytest
+import pandas as pd
+import numpy as np
+from unittest.mock import patch
+
+from src.orchestration.orchestrator import ExperimentOrchestrator
+from src.orchestration.events import (
+    ModelTrainedEvent,
+    EvaluationCompletedEvent,
+    AutomataDecisionEvent,
+    SensitivityAnalysisEvent
+)
+
+@pytest.fixture
+def mock_dataset():
+    # 200 satırlık mock DataFrame, 'anomaly' kolonu dahil
+    df = pd.DataFrame(np.random.randn(200, 3), columns=["f1", "f2", "f3"])
+    df["anomaly"] = np.random.choice([0, 1], size=200, p=[0.9, 0.1]).tolist()
+    # SkabGroupFoldStrategy için en az k_folds kadar farklı group (source_file) gerekli
+    df["source_file"] = ["mock_file_1.csv"] * 100 + ["mock_file_2.csv"] * 100
+    df.index = pd.date_range("2020-01-01", periods=200, freq="h")
+    return df
+
+@patch("src.data.loader.factory.DataLoaderFactory.get_loader")
+def test_experiment_orchestrator_events(mock_get_loader, mock_dataset):
+    # DataLoaderFactory mock
+    class MockLoader:
+        def load_data(self):
+            return mock_dataset
+            
+    mock_get_loader.return_value = MockLoader()
+    
+    orchestrator = ExperimentOrchestrator()
+    
+    # Kasıtlı olarak konfigürasyonu ezelim (testin hızlı bitmesi için az epoch ve 1 seed)
+    if "experiment" not in orchestrator.config._config:
+        orchestrator.config._config["experiment"] = {}
+    orchestrator.config._config["experiment"]["random_seeds"] = [42]
+    orchestrator.config._config["experiment"]["k_folds"] = 2
+    orchestrator.config._config["experiment"]["noise_std"] = 0.1
+    
+    if "deep_learning" not in orchestrator.config._config:
+        orchestrator.config._config["deep_learning"] = {}
+    orchestrator.config._config["deep_learning"]["batch_size"] = 16
+    orchestrator.config._config["deep_learning"]["epochs"] = 1 # Hızlı çalışması için
+    orchestrator.config._config["deep_learning"]["patience"] = 1
+    orchestrator.config._config["deep_learning"]["learning_rate"] = 0.001
+    orchestrator.config._config["deep_learning"]["window_size"] = 4
+    
+    # Event dinleyicileri
+    received_events = []
+    def event_listener(event):
+        received_events.append(event)
+        
+    orchestrator.event_bus.subscribe(ModelTrainedEvent, event_listener)
+    orchestrator.event_bus.subscribe(EvaluationCompletedEvent, event_listener)
+    orchestrator.event_bus.subscribe(AutomataDecisionEvent, event_listener)
+    orchestrator.event_bus.subscribe(SensitivityAnalysisEvent, event_listener)
+    
+    # Çalıştır
+    orchestrator.run_experiment("skab")
+    orchestrator.run_cross_dataset_scenario()
+    orchestrator.run_parameter_sensitivity_scenario("skab")
+    
+    # Olayları kontrol et
+    trained_events = [e for e in received_events if isinstance(e, ModelTrainedEvent)]
+    assert len(trained_events) > 0, "ModelTrainedEvent fırlatılmadı!"
+    
+    eval_events = [e for e in received_events if isinstance(e, EvaluationCompletedEvent)]
+    assert len(eval_events) > 0, "EvaluationCompletedEvent fırlatılmadı!"
+    
+    # Noise senaryosu kontrol
+    noise_events = [e for e in eval_events if e.scenario == "noise"]
+    assert len(noise_events) > 0, "Noise senaryosu çalışmadı!"
+    
+    # Cross dataset kontrol
+    cross_events = [e for e in eval_events if e.scenario == "cross_dataset"]
+    assert len(cross_events) > 0, "Cross dataset senaryosu çalışmadı!"
+    assert any("farklı varyansı temsil eder" in e.note for e in cross_events), "Cross dataset note eksik!"
+    
+    # Unseen pattern kontrol
+    unseen_events = [e for e in received_events if isinstance(e, AutomataDecisionEvent)]
+    assert len(unseen_events) > 0, "AutomataDecisionEvent (Unseen Pattern) fırlatılmadı!"
+    
+    # Sensitivity analysis kontrol
+    sensitivity_events = [e for e in received_events if isinstance(e, SensitivityAnalysisEvent)]
+    assert len(sensitivity_events) > 0, "SensitivityAnalysisEvent fırlatılmadı!"
+    
+    # Orijinal modüllere (trained_models) dokunulmadığını doğrula
+    assert len(orchestrator._trained_models) > 0, "Trained modeller kaydedilmemiş!"
+
+
+================================================================================
+
