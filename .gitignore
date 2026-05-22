@@ -24,3 +24,4 @@ artifacts/
 *.log
 *.joblib
 *.pth
+src/data/raw
