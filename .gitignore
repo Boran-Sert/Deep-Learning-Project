@@ -18,10 +18,10 @@ __pycache__/
 .DS_Store
 
 # Project specific
-data/
 outputs/
 logs/
 artifacts/
 *.log
 *.joblib
 *.pth
+src/data/raw

@@ -1,5 +1,16 @@
+[project]
+name = "deep-learning-project"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+[tool.pyright]
+pythonVersion = "3.11"
+pythonPlatform = "Windows"
+venvPath = "."
+venv = "venv"
+extraPaths = ["."]
+
 [tool.ruff]
-line-length = 88
 target-version = "py311"
 
 [tool.ruff.lint]
@@ -9,9 +20,5 @@ ignore = []
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = "-ra -q"
-testpaths = [
-    "tests",
-]
-pythonpath = [
-    "src",
-]
+testpaths = ["tests"]
+pythonpath = ["."]

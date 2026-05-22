@@ -8,6 +8,6 @@ def test_python_version():
 
 def test_environment_setup():
     """Test if the core module is correctly accessible."""
-    import core
+    from src import core
 
     assert core is not None

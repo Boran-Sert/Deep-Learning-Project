@@ -1,17 +1,40 @@
 project:
-  name: "Deep Learning Anomaly Detection"
-  seeds: [42, 123, 2026, 7, 999]
-
-training:
-  batch_size: 32
-  epoch: 50
-  patience: 5
-
-automata:
-  window_size: 3 # 3, 4, 5, 6
-  alphabet_size: 3 # 3, 4, 5, 6
+  name: "Time Series Anomaly Detection"
+  version: "1.0.0"
 
 paths:
-  data_raw: "data_raw"
-  artifacts: "artifacts"
-  logs: "logs"
+  data_dir: "data"
+  raw_data_dir: "data/raw"
+  skab_valve1: "data/raw/SKAB-master/data/valve1"
+  skab_valve2: "data/raw/SKAB-master/data/valve2"
+  batadal_dataset: "data/raw/BATADAL_dataset04.csv"
+  artifacts_dir: "artifacts"
+  logs_dir: "logs"
+
+experiment:
+  random_seeds: [42, 123, 2026, 7, 999]
+  k_folds: 5
+  noise_std: 0.1
+
+deep_learning:
+  batch_size: 32
+  epochs: 50
+  patience: 5
+  learning_rate: 0.001
+  window_size: 10
+  models: ["cnn", "gru"]
+  cnn:
+    num_filters_1: 64
+    num_filters_2: 128
+    kernel_size: 3
+  gru:
+    hidden_size: 64
+    num_layers: 2
+    dropout: 0.2
+
+automata:
+  window_size: 4  # SAX window size
+  alphabet_size: 3 # Alphabet size
+  paa_factor: 1    # PAA segment point reduction factor
+  threshold: 0.5   # Anomaly confidence score threshold
+  path_window: 4   # Automata consecutive path length
