@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import pandas as pd
 import numpy as np
+import random
 
 from src.models.base import IAnomalyDetector
 from src.models.deep_learning.dataset import SlidingWindowDataset
@@ -45,7 +46,19 @@ class DeepLearningAdapter(IAnomalyDetector):
         )
         self.model.to(self.device)
 
-    def train(self, X_train: pd.DataFrame, y_train: pd.Series, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.Series] = None) -> None:
+    def _set_seed(self, seed: int):
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        np.random.seed(seed)
+        random.seed(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+    def train(self, X_train: pd.DataFrame, y_train: pd.Series, X_val: Optional[pd.DataFrame] = None, y_val: Optional[pd.Series] = None, seed: Optional[int] = None) -> None:
+        if seed is None:
+            seed = self.config.get("experiment.current_seed", 42)
+        self._set_seed(seed)
+        
         if self.model is None:
             self.build_model()
         
