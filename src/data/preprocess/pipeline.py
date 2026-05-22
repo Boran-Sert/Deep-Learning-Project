@@ -29,6 +29,9 @@ class PreprocessorPipeline:
                 - X_train_scaled: Deep Learning modelleri için standartlaştırılmış özellikler.
                 - X_train_pca: Automata modeli için tek bileşene (PC1) indirilmiş özellikler.
         """
+        # Eksik değerleri ileri ve geri doldurarak yönet (Zaman serisi için en uygunu)
+        X_train = X_train.ffill().bfill()
+        
         # Normalizasyon (StandardScaler)
         scaler = StandardScaler()
         X_scaled_array = scaler.fit_transform(X_train)
@@ -70,6 +73,9 @@ class PreprocessorPipeline:
         # Kaydedilmiş nesneleri yükle
         scaler = self.artifact_manager.load_artifact("scaler")
         pca = self.artifact_manager.load_artifact("pca")
+        
+        # Eksik verileri doldur
+        X_test = X_test.ffill().bfill()
         
         # Transform işlemlerini uygula
         X_scaled_array = scaler.transform(X_test)
