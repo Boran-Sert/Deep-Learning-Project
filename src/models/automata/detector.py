@@ -83,7 +83,7 @@ class AutomataDetector(IAnomalyDetector):
         
         for i in range(len(words)):
             # Kelimenin orijinal serideki son elemanının indeksi
-            original_idx = min((i * self.paa_factor) + window_size - 1, len(y_train) - 1)
+            original_idx = min((i + window_size - 1) * self.paa_factor, len(y_train) - 1)
             
             # Sadece normal verileri (y=0) modele öğretmek istiyoruz
             if y_train.iloc[original_idx] == 0:
@@ -91,7 +91,7 @@ class AutomataDetector(IAnomalyDetector):
                 
             # Geçiş (Transition) sayımı: Eğitime y=0 iken ardışık kelime geçişleri dahil edilir
             if i < len(words) - 1:
-                next_original_idx = min(((i + 1) * self.paa_factor) + window_size - 1, len(y_train) - 1)
+                next_original_idx = min(((i + 1) + window_size - 1) * self.paa_factor, len(y_train) - 1)
                 # Geçişin her iki tarafı da normal olmalı ki sağlıklı bir "normal geçiş" öğrenebilelim
                 if y_train.iloc[original_idx] == 0 and y_train.iloc[next_original_idx] == 0:
                     normal_transitions.append((words[i], words[i+1]))
@@ -163,7 +163,10 @@ class AutomataDetector(IAnomalyDetector):
             predictions.append(is_anomaly)
             
         # Orijinal X_test boyutuna uydurmak için başa padding yapalım
-        pad_length = len(series) - len(predictions)
+        n_segments = max(1, len(series) // self.paa_factor)
+        pad_length = len(series) - (n_segments - self.slider.window_size + 1)
+        if pad_length < 0:
+            pad_length = 0
         
         if pad_length > 0:
             padded_predictions = np.pad(predictions, (pad_length, 0), mode='constant', constant_values=0)
