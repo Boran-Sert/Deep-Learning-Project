@@ -20,16 +20,22 @@ from src.orchestration.events import (
     SensitivityAnalysisEvent,
 )
 
-
 def compute_metrics(y_true, y_pred) -> dict:
-    y_pred_bin = (np.array(y_pred) >= 0.5).astype(int).tolist()
-    return {
-        "accuracy": float(accuracy_score(y_true, y_pred_bin)),
-        "precision": float(precision_score(y_true, y_pred_bin, zero_division=0)),
-        "recall": float(recall_score(y_true, y_pred_bin, zero_division=0)),
-        "f1": float(f1_score(y_true, y_pred_bin, zero_division=0)),
-    }
+    # BOYUT UYUŞMAZLIĞINI ENGELLEMEK İÇİN KUYRUKTAN KIRPMA (TRIMMING)
+    y_true_list = list(y_true)
+    y_pred_list = list(y_pred)
+    min_len = min(len(y_true_list), len(y_pred_list))
+    
+    y_true_safe = y_true_list[:min_len]
+    y_pred_safe = y_pred_list[:min_len]
 
+    y_pred_bin = (np.array(y_pred_safe) >= 0.5).astype(int).tolist()
+    return {
+        "accuracy": float(accuracy_score(y_true_safe, y_pred_bin)),
+        "precision": float(precision_score(y_true_safe, y_pred_bin, zero_division=0)),
+        "recall": float(recall_score(y_true_safe, y_pred_bin, zero_division=0)),
+        "f1": float(f1_score(y_true_safe, y_pred_bin, zero_division=0)),
+    }
 
 class ExperimentOrchestrator:
     """
