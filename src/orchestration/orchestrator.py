@@ -32,9 +32,9 @@ def compute_metrics(y_true, y_pred) -> dict:
     y_pred_bin = (np.array(y_pred_safe) >= 0.5).astype(int).tolist()
     return {
         "accuracy": float(accuracy_score(y_true_safe, y_pred_bin)),
-        "precision": float(precision_score(y_true_safe, y_pred_bin, zero_division=0)),
-        "recall": float(recall_score(y_true_safe, y_pred_bin, zero_division=0)),
-        "f1": float(f1_score(y_true_safe, y_pred_bin, zero_division=0)),
+        "precision": float(precision_score(y_true_safe, y_pred_bin, average="macro", zero_division=0)),
+        "recall": float(recall_score(y_true_safe, y_pred_bin, average="macro", zero_division=0)),
+        "f1": float(f1_score(y_true_safe, y_pred_bin, average="macro", zero_division=0)),
     }
 
 class ExperimentOrchestrator:
