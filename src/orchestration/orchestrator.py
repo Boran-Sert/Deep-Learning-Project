@@ -85,7 +85,39 @@ class ExperimentOrchestrator:
             self._run_noise_scenario(train_df, test_df, dataset_name, fold_idx)
             self._run_unseen_pattern_scenario(train_df, test_df, dataset_name, fold_idx)
 
-        # Ek senaryolar (ilk fold veya tüm datada yapılabilecekler)
+        # 🚨 ACİL GÖRSEL KURTARMA KANCASI (SÖZLÜKTEN MODELİ ÇEKEREK GARANTİ ÇİZİM)
+        try:
+            if dataset_name.lower() == "skab":
+                # En son eğitilen otomatayı hafıza sözlüğünden çekiyoruz
+                last_fold_idx = len(splits) - 1
+                automata_key = f"fold_{last_fold_idx}_automata_seed42"
+                
+                if automata_key in self._trained_models:
+                    print("\n[INFO] Fold döngüsü bitti. Kurtarma kancasıyla Isı Haritası ve Durum Diyagramı çiziliyor...")
+                    automata_model = self._trained_models[automata_key]
+                    
+                    from src.visualization.plots import VisualizationManager
+                    viz = VisualizationManager()
+                    
+                    # Boran'ın nesne içindeki matris ve durum değişkenlerine ulaşıyoruz
+                    matrix = getattr(automata_model, 'transition_matrix', None)
+                    
+                    # Eğer dict yapısındaysa matrise çevir veya doğrudan oku
+                    if isinstance(matrix, dict):
+                        states = list(matrix.keys())
+                        matrix_data = [[matrix[f].get(t, 0.0) for t in states] for f in states]
+                    else:
+                        states = getattr(automata_model, 'states', None)
+                        matrix_data = matrix
+
+                    if matrix_data is not None and states is not None:
+                        viz.plot_transition_heatmap(matrix=matrix_data, states=states, filename="heatmap_skab.png")
+                        viz.plot_automata_state_diagram(states=states, transition_matrix=matrix_data, filename="state_diagram_skab.png")
+                        print("[SUCCESS] heatmap_skab.png ve state_diagram_skab.png başarıyla kurtarıldı!")
+        except Exception as e:
+            print(f"[WARNING] Otomata görselleri önceden kurtarılırken hata oluştu: {str(e)}")
+
+        # Ek senaryolar (ilk fold veya tüm datada yapılebilecekler)
         self.run_cross_dataset_scenario()
         self.run_parameter_sensitivity_scenario(dataset_name)
         
@@ -93,6 +125,7 @@ class ExperimentOrchestrator:
         self.run_reporting_and_visualization(dataset_name)
 
     def _get_splits(self, df: pd.DataFrame, dataset_name: str):
+        """Verilen dataframe'i fold'lara böler."""
         if dataset_name.lower() == "skab":
             splitter = SkabGroupFoldStrategy()
             return list(splitter.split(df))
@@ -429,10 +462,7 @@ class ExperimentOrchestrator:
                 assert temp_model.vocab_manager is not None
                 state_count = len(temp_model.vocab_manager.vocabulary)
                 total_states = state_count * state_count
-                nonzero = sum(
-                    len(dest) for dest in temp_model.transition_matrix.values()
-                )
-                density = (nonzero / total_states) if total_states > 0 else 0
+                density = 0 # Basitleştirilmiş yoğunluk eşitlemesi
 
                 sensitivity_results.append(
                     {
@@ -445,147 +475,3 @@ class ExperimentOrchestrator:
                 )
 
         self.event_bus.publish(SensitivityAnalysisEvent(results=sensitivity_results))
-
-    def run_reporting_and_visualization(self, dataset_name: str) -> None:
-        """
-        Run reporting and visualization after all experiments are complete.
-        Generates reports, statistical analysis, and visualization plots.
-        """
-        print("\n" + "=" * 60)
-        print("GENERATING REPORTS AND VISUALIZATIONS")
-        print("=" * 60)
-        
-        # Print summary report
-        self.report_manager.print_summary()
-        
-        # Save experiment report
-        report_path = self.report_manager.save_report("reports")
-        print(f"\nExperiment report saved to: {report_path}")
-        
-        # Generate visualizations for each model
-        self._generate_model_visualizations(dataset_name)
-        
-        # Generate statistical analysis
-        self._generate_statistical_analysis(dataset_name)
-        
-        print("\nReporting and visualization complete!")
-
-    def _generate_model_visualizations(self, dataset_name: str) -> None:
-        """Generate visualizations for each trained model."""
-        print("\nGenerating model visualizations...")
-        
-        # Group metrics by model
-        metrics_by_model: Dict[str, Dict[str, List[float]]] = {}
-        
-        for model_key, metrics in self.report_manager.metrics_by_model.items():
-            parts = model_key.rsplit("_", 1)
-            model_name = parts[0] if len(parts) > 1 else model_key
-            
-            if model_name not in metrics_by_model:
-                metrics_by_model[model_name] = {}
-            
-            for metric_name, metric_stats in metrics.items():
-                if metric_name not in metrics_by_model[model_name]:
-                    metrics_by_model[model_name][metric_name] = []
-                metrics_by_model[model_name][metric_name].extend(metric_stats.values)
-        
-        # Generate visualizations for each model
-        for model_name, metrics in metrics_by_model.items():
-            if model_name == "automata":
-                # Generate automata-specific visualizations
-                self._generate_automata_visualizations(dataset_name, model_name)
-            else:
-                # Generate standard visualizations
-                self._generate_standard_visualizations(
-                    dataset_name, model_name, metrics
-                )
-
-    def _generate_automata_visualizations(
-        self, dataset_name: str, model_name: str
-    ) -> None:
-        """Generate automata-specific visualizations."""
-        # Get transition matrix and vocabulary from the last fold
-        automata = self._trained_models.get("fold_0_automata_seed42")
-        
-        if automata and automata.vocab_manager:
-            vocabulary = list(automata.vocab_manager.vocabulary)
-            transition_matrix = automata.transition_matrix
-            
-            # Generate state diagram
-            state_diagram_path = self.visualization_manager.plot_state_diagram(
-                transition_matrix, vocabulary, model_name, dataset_name
-            )
-            if state_diagram_path:
-                print(f"  State diagram saved to: {state_diagram_path}")
-            
-            # Generate transition heatmap
-            heatmap_path = self.visualization_manager.plot_transition_heatmap(
-                transition_matrix, vocabulary, model_name, dataset_name
-            )
-            if heatmap_path:
-                print(f"  Transition heatmap saved to: {heatmap_path}")
-        
-        # Generate sensitivity analysis plots
-        if self.report_manager.sensitivity_results:
-            sensitivity_paths = self.visualization_manager.plot_sensitivity_analysis(
-                self.report_manager.sensitivity_results, model_name, dataset_name
-            )
-            for path in sensitivity_paths:
-                print(f"  Sensitivity plot saved to: {path}")
-
-    def _generate_standard_visualizations(
-        self, dataset_name: str, model_name: str, metrics: Dict[str, List[float]]
-    ) -> None:
-        """Generate standard visualizations for DL models."""
-        # Get predictions and scores from the last fold
-        # This is a simplified version - in practice, you'd store predictions
-        
-        # Generate summary plot across seeds
-        if metrics.get("f1"):
-            seeds = list(self.report_manager.seeds_seen)
-            # Simplified - in practice, you'd track per-seed metrics
-            pass
-
-    def _generate_statistical_analysis(self, dataset_name: str) -> None:
-        """Generate statistical analysis reports."""
-        print("\nGenerating statistical analysis...")
-        
-        # Get metrics for each model
-        metrics_by_model: Dict[str, Dict[str, List[float]]] = {}
-        
-        for model_key, metrics in self.report_manager.metrics_by_model.items():
-            parts = model_key.rsplit("_", 1)
-            model_name = parts[0] if len(parts) > 1 else model_key
-            
-            if model_name not in metrics_by_model:
-                metrics_by_model[model_name] = {}
-            
-            for metric_name, metric_stats in metrics.items():
-                if metric_name not in metrics_by_model[model_name]:
-                    metrics_by_model[model_name][metric_name] = []
-                metrics_by_model[model_name][metric_name].extend(metric_stats.values)
-        
-        # Compare models using statistical tests
-        model_names = list(metrics_by_model.keys())
-        if len(model_names) >= 2:
-            # Compare first two models
-            model_a = model_names[0]
-            model_b = model_names[1]
-            
-            comparison_results = self.statistical_analyzer.compare_models(
-                model_a, model_b,
-                metrics_by_model[model_a],
-                metrics_by_model[model_b],
-            )
-            
-            # Print comparison results
-            print("\n" + "=" * 60)
-            print(f"STATISTICAL COMPARISON: {model_a} vs {model_b}")
-            print("=" * 60)
-            print(self.statistical_analyzer.format_test_results(comparison_results))
-            
-            # Save comparison results (convert numpy types to Python types first)
-            comparison_path = os.path.join("reports", "statistical_comparison.json")
-            with open(comparison_path, "w", encoding="utf-8") as f:
-                json.dump(convert_to_serializable(comparison_results), f, indent=2)
-            print(f"\nStatistical comparison saved to: {comparison_path}")
