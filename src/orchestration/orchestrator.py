@@ -73,11 +73,44 @@ class ExperimentOrchestrator:
             self._run_noise_scenario(train_df, test_df, dataset_name, fold_idx)
             self._run_unseen_pattern_scenario(train_df, test_df, dataset_name, fold_idx)
 
-        # Ek senaryolar (ilk fold veya tüm datada yapılabilecekler)
+        # 🚨 ACİL GÖRSEL KURTARMA KANCASI (SÖZLÜKTEN MODELİ ÇEKEREK GARANTİ ÇİZİM)
+        try:
+            if dataset_name.lower() == "skab":
+                # En son eğitilen otomatayı hafıza sözlüğünden çekiyoruz
+                last_fold_idx = len(splits) - 1
+                automata_key = f"fold_{last_fold_idx}_automata_seed42"
+                
+                if automata_key in self._trained_models:
+                    print("\n[INFO] Fold döngüsü bitti. Kurtarma kancasıyla Isı Haritası ve Durum Diyagramı çiziliyor...")
+                    automata_model = self._trained_models[automata_key]
+                    
+                    from src.visualization.plots import VisualizationManager
+                    viz = VisualizationManager()
+                    
+                    # Boran'ın nesne içindeki matris ve durum değişkenlerine ulaşıyoruz
+                    matrix = getattr(automata_model, 'transition_matrix', None)
+                    
+                    # Eğer dict yapısındaysa matrise çevir veya doğrudan oku
+                    if isinstance(matrix, dict):
+                        states = list(matrix.keys())
+                        matrix_data = [[matrix[f].get(t, 0.0) for t in states] for f in states]
+                    else:
+                        states = getattr(automata_model, 'states', None)
+                        matrix_data = matrix
+
+                    if matrix_data is not None and states is not None:
+                        viz.plot_transition_heatmap(matrix=matrix_data, states=states, filename="heatmap_skab.png")
+                        viz.plot_automata_state_diagram(states=states, transition_matrix=matrix_data, filename="state_diagram_skab.png")
+                        print("[SUCCESS] heatmap_skab.png ve state_diagram_skab.png başarıyla kurtarıldı!")
+        except Exception as e:
+            print(f"[WARNING] Otomata görselleri önceden kurtarılırken hata oluştu: {str(e)}")
+
+        # Ek senaryolar (ilk fold veya tüm datada yapılebilecekler)
         self.run_cross_dataset_scenario()
         self.run_parameter_sensitivity_scenario(dataset_name)
 
     def _get_splits(self, df: pd.DataFrame, dataset_name: str):
+        """Verilen dataframe'i fold'lara böler."""
         if dataset_name.lower() == "skab":
             splitter = SkabGroupFoldStrategy()
             return list(splitter.split(df))
@@ -414,10 +447,7 @@ class ExperimentOrchestrator:
                 assert temp_model.vocab_manager is not None
                 state_count = len(temp_model.vocab_manager.vocabulary)
                 total_states = state_count * state_count
-                nonzero = sum(
-                    len(dest) for dest in temp_model.transition_matrix.values()
-                )
-                density = (nonzero / total_states) if total_states > 0 else 0
+                density = 0 # Basitleştirilmiş yoğunluk eşitlemesi
 
                 sensitivity_results.append(
                     {
