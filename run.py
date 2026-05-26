@@ -133,7 +133,7 @@ def main():
     print("[INFO] Setting up visualization and reporting event listeners...")
     setup_event_listeners(orchestrator, reporter, viz)
 
-    dataset_to_run = orchestrator.config.get("dataset.active_dataset", "skab")
+    dataset_to_run = "batadal"
     print(f"[INFO] Starting experiment pipeline for: {dataset_to_run}")
     
     try:
