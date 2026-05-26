@@ -74,11 +74,63 @@ class VisualizationManager:
 
     def plot_transition_heatmap(self, matrix, states, filename: str = "heatmap_automata.png"):
         """Otomatanın durum geçiş olasılık matrisini ısı haritası olarak çizer."""
-        plt.figure(figsize=(8, 6))
-        sns.heatmap(matrix, annot=True, fmt=".2f", cmap="YlGnBu", xticklabels=states, yticklabels=states)
-        plt.title("Automata State Transition Probability Heatmap", fontsize=12, fontweight='bold')
-        plt.ylabel("Mevcut Durum (From)")
-        plt.xlabel("Sonraki Durum (To)")
+        # Kanvas boyutunu büyüterek verilere nefes aldırıyoruz
+        plt.figure(figsize=(14, 11)) 
+        
+        # Sıkışıklığı ve metin karmaşasını önlemek için annot=False yaptık (rakamları gizledik)
+        # Bu sayede sadece renk yoğunluklarından kalıplar okunabilecek
+        sns.heatmap(matrix, annot=False, cmap="YlGnBu", xticklabels=states, yticklabels=states)
+        
+        plt.title("Automata State Transition Probability Heatmap", fontsize=14, fontweight='bold', pad=15)
+        plt.ylabel("Mevcut Durum (From)", fontsize=12)
+        plt.xlabel("Sonraki Durum (To)", fontsize=12)
+        
+        # Eksen yazı boyutlarını ciddi oranda küçülttük ve dikey hizaladık
+        plt.xticks(rotation=90, fontsize=6)
+        plt.yticks(rotation=0, fontsize=6)
+        
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.output_dir, filename), dpi=300)
+        plt.close()
+
+    def plot_automata_state_diagram(self, states, transition_matrix, filename: str = "automata_state_diagram.png"):
+        """Matplotlib koordinat düzlemi üzerinde dairesel ağaç grafiği olarak çizer."""
+        # Görsel alanı genişletiyoruz
+        plt.figure(figsize=(11, 11)) 
+        num_states = len(states)
+        angles = np.linspace(0, 2 * np.pi, num_states, endpoint=False)
+        
+        coords = {states[i]: (np.cos(angles[i]), np.sin(angles[i])) for i in range(num_states)}
+        
+        # Düğümleri (mavi daireleri) çok daha küçük çizerek (0.05) üst üste binmelerini engelliyoruz
+        for state, (x, y) in coords.items():
+            circle = plt.Circle((x, y), 0.05, color='skyblue', ec='black', zorder=2)
+            plt.gca().add_patch(circle)
+            # Metin boyutunu 6 yaparak dairelerin içine tam sığmasını sağladık
+            plt.text(x, y, state, ha='center', va='center', fontsize=6, fontweight='bold', zorder=3)
+        
+        # Geçiş oku eşiğini %25'ten %45'e (0.45) yükselttik.
+        # Böylece örümcek ağı gibi her şeyi çizmek yerine sadece çok güçlü olan ana akışları gösterecek
+        for i, from_state in enumerate(states):
+            for j, to_state in enumerate(states):
+                try:
+                    prob = transition_matrix[i][j]
+                except Exception:
+                    prob = transition_matrix[from_state].get(to_state, 0.0) if isinstance(transition_matrix, dict) else 0.0
+                
+                if prob > 0.45: 
+                    x1, y1 = coords[from_state]
+                    x2, y2 = coords[to_state]
+                    
+                    if from_state != to_state:
+                        # Okları inceltip şeffaflığını (alpha) ayarladık
+                        plt.annotate("", xy=(x2, y2), xytext=(x1, y1),
+                                     arrowprops=dict(arrowstyle="->", color="coral", alpha=0.4, lw=1.0), zorder=1)
+        
+        plt.xlim(-1.2, 1.2)
+        plt.ylim(-1.2, 1.2)
+        plt.title("Automata State Diagram (Durum Geçiş Ağacı)", fontsize=14, fontweight='bold')
+        plt.axis('off')
         plt.tight_layout()
         plt.savefig(os.path.join(self.output_dir, filename), dpi=300)
         plt.close()
@@ -91,49 +143,6 @@ class VisualizationManager:
         plt.xlabel(param_name)
         plt.ylabel("F1-Score")
         plt.grid(True, linestyle='--', alpha=0.6)
-        plt.tight_layout()
-        plt.savefig(os.path.join(self.output_dir, filename), dpi=300)
-        plt.close()
-
-    def plot_automata_state_diagram(self, states, transition_matrix, filename: str = "automata_state_diagram.png"):
-        """
-        Zorunlu olan 'Automata State Diagram' çıktısını Graphviz bağımlılığı 
-        olmadan, doğrudan matplotlib koordinat düzlemi üzerinde dairesel ağaç 
-        grafiği olarak çizer (Çökme riskini sıfırlar).
-        """
-        plt.figure(figsize=(7, 7))
-        num_states = len(states)
-        angles = np.linspace(0, 2 * np.pi, num_states, endpoint=False)
-        
-        # Durum düğümlerinin dairesel koordinatları
-        coords = {states[i]: (np.cos(angles[i]), np.sin(angles[i])) for i in range(num_states)}
-        
-        # Düğümleri (Daireleri) çiz
-        for state, (x, y) in coords.items():
-            circle = plt.Circle((x, y), 0.15, color='skyblue', ec='black', zorder=2)
-            plt.gca().add_patch(circle)
-            plt.text(x, y, state, ha='center', va='center', fontsize=9, fontweight='bold', zorder=3)
-        
-        # Geçiş oklarını (Sadece yüksek olasılıklı olanları) çiz
-        for i, from_state in enumerate(states):
-            for j, to_state in enumerate(states):
-                prob = transition_matrix[i][j]
-                if prob > 0.25: # Sadece %25'in üzerindeki geçişleri çizerek grafiği sade tutuyoruz
-                    x1, y1 = coords[from_state]
-                    x2, y2 = coords[to_state]
-                    
-                    if from_state == to_state:
-                        # Kendi kendine döngü oku
-                        plt.plot(x1, y1 + 0.15, marker='o', color='gray', alpha=0.5, zorder=1)
-                    else:
-                        # Diğer düğüme giden çizgi
-                        plt.annotate("", xy=(x2, y2), xytext=(x1, y1),
-                                     arrowprops=dict(arrowstyle="->", color="coral", alpha=0.6, lw=1.5), zorder=1)
-        
-        plt.xlim(-1.4, 1.4)
-        plt.ylim(-1.4, 1.4)
-        plt.title("Automata State Diagram (Durum Geçiş Ağacı)", fontsize=12, fontweight='bold')
-        plt.axis('off')
         plt.tight_layout()
         plt.savefig(os.path.join(self.output_dir, filename), dpi=300)
         plt.close()
