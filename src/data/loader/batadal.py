@@ -1,7 +1,5 @@
 import os
-
 import pandas as pd
-
 from src.core.config_manager import ConfigurationManager
 from src.data.loader.base import IDataLoader
 
@@ -35,12 +33,10 @@ class BatadalLoader(IDataLoader):
                 f"kullanılmalıdır! Verilen yol: {batadal_path}"
             )
 
-        # BATADAL csv okuma (genellikle sütunlar virgülle ayrılmıştır)
-        # Sütunlarda boşluk vs. olabilir, parse_dates kullanacağız
+        # BATADAL csv okuma
         df = pd.read_csv(batadal_path)
 
         # Sütun isimlerindeki boşlukları temizleyelim
-        # (BATADAL'da ' DATETIME' vb olabilir)
         df.columns = df.columns.str.strip()
 
         # Datetime sütununu index yapalım
@@ -53,7 +49,6 @@ class BatadalLoader(IDataLoader):
             df.set_index("datetime", inplace=True)
 
         # Hedef kolonunu 'anomaly' olarak standartlaştır
-        # BATADAL'da etiket sütunu genellikle 'ATT_FLAG' (0 veya 1)
         if "ATT_FLAG" in df.columns:
             df.rename(columns={"ATT_FLAG": "anomaly"}, inplace=True)
 
@@ -62,6 +57,10 @@ class BatadalLoader(IDataLoader):
             raise ValueError(
                 "BATADAL veri setinde hedef (ATT_FLAG -> anomaly) kolonu bulunamadı!"
             )
+
+        # 🚨 KESİN ETİKET TEMİZLEME KANCASI
+        # 0, 0.0, NORMAL dışındaki tüm siber saldırı, anomali veya bozuk etiketleri tam olarak 1'e indirgiyoruz
+        df["anomaly"] = df["anomaly"].apply(lambda x: 1 if str(x).strip() not in ["0", "0.0", "NORMAL", "Normal"] else 0)
 
         df.sort_index(inplace=True)
         return df
