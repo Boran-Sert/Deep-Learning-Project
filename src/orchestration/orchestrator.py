@@ -9,6 +9,7 @@ from src.data.loader.factory import DataLoaderFactory
 from src.data.splitter.skab import SkabGroupFoldStrategy
 from src.data.splitter.batadal import BatadalTemporalSplitStrategy
 from src.data.preprocess.pipeline import PreprocessorPipeline
+from src.models.deep_learning import dataset
 from src.models.deep_learning.adapter import DeepLearningAdapter
 from src.models.automata.detector import AutomataDetector
 from src.models.automata.vocabulary import UnseenHandler, levenshtein_distance
@@ -72,6 +73,7 @@ class ExperimentOrchestrator:
             self._run_original_scenario(train_df, test_df, dataset_name, fold_idx)
             self._run_noise_scenario(train_df, test_df, dataset_name, fold_idx)
             self._run_unseen_pattern_scenario(train_df, test_df, dataset_name, fold_idx)
+        
 
         # 🚨 ACİL GÖRSEL KURTARMA KANCASI (SÖZLÜKTEN MODELİ ÇEKEREK GARANTİ ÇİZİM)
         try:
@@ -120,8 +122,13 @@ class ExperimentOrchestrator:
         raise ValueError(f"Unknown dataset for split: {dataset_name}")
 
     def _get_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        drop_cols = ["anomaly", "source_file", "source_group"]
-        return df.drop(columns=[c for c in drop_cols if c in df.columns])
+        # Sadece sayısal ve gerçek sensör verilerini tut, etiket türevlerini tamamen dışla
+        drop_cols = ["anomaly", "source_file", "source_group", "ATT_FLAG", "FLAG", "label", "status"]
+        # Ek olarak içinde 'flag', 'state' veya 'label' geçen gizli kopya sütunları varsa onları da yakala
+        extra_drops = [c for c in df.columns if any(x in c.lower() for x in ["flag", "label"]) and c not in drop_cols]
+        all_drops = drop_cols + extra_drops
+        
+        return df.drop(columns=[c for c in all_drops if c in df.columns])
 
     def _train_all_models(
         self,
