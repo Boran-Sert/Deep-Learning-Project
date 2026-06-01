@@ -1,12 +1,12 @@
 {
-  "accuracy": {
+  "f1": {
     "test": "wilcoxon",
     "statistic": 0.0,
     "p_value": 1.0,
     "significant": "False",
     "alpha": 0.05
   },
-  "f1": {
+  "accuracy": {
     "test": "wilcoxon",
     "statistic": 0.0,
     "p_value": 1.0,

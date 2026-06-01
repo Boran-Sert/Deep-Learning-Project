@@ -5,9 +5,9 @@ project:
 paths:
   data_dir: "data"
   raw_data_dir: "data/raw"
-  skab_valve1: "data/raw/SKAB-master/data/valve1"
-  skab_valve2: "data/raw/SKAB-master/data/valve2"
-  batadal_dataset: "data/raw/BATADAL_dataset04.csv"
+  skab_valve1: "C:/Users/gokse/OneDrive/Belgeler/GitHub/Deep-Learning-Project/data/raw/SKAB-master/data/valve1"
+  skab_valve2: "C:/Users/gokse/OneDrive/Belgeler/GitHub/Deep-Learning-Project/data/raw/SKAB-master/data/valve2"
+  batadal_dataset: "C:/Users/gokse/OneDrive/Belgeler/GitHub/Deep-Learning-Project/data/raw/BATADAL_dataset04.csv"
   artifacts_dir: "artifacts"
   logs_dir: "logs"
 

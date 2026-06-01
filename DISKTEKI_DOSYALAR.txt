@@ -1,0 +1,93 @@
+================================================================================
+PROJE DİZİNİNDEN ÜRETİLEN DOSYALAR - ÖZET LİSTESİ
+================================================================================
+Tarih: 2026
+Proje: Zaman Serisi Anomali Tespiti (Faz 5 & Faz 6)
+================================================================================
+
+1. RAPOR DOSYALARI (Kök Dizin)
+--------------------------------------------------------------------------------
+VAR: final_academic_report.txt
+     -> Tüm fazların (Faz 1-6) akademik özet raporu
+     -> Konum: c:\Users\gokse\Deep-Learning-Project\final_academic_report.txt
+
+VAR: reports/experiment_report.json
+     -> Ham metrik verileri (accuracy, precision, recall, F1)
+     -> Konum: c:\Users\gokse\Deep-Learning-Project\reports\experiment_report.json
+
+VAR: reports/statistical_comparison.json
+     -> Wilcoxon/McNemar test sonuçları
+     -> Konum: c:\Users\gokse\Deep-Learning-Project\reports\statistical_comparison.json
+
+2. GÖRSELLEŞTİRME DOSYALARI (reports/figures/)
+--------------------------------------------------------------------------------
+VAR: transition_heatmap_automata_skab.png
+     -> Otomata geçiş olasılıkları ısı haritası
+     -> Konum: c:\Users\gokse\Deep-Learning-Project\reports\figures\transition_heatmap_automata_skab.png
+
+VAR: sensitivity_accuracy_automata_skab.png
+VAR: sensitivity_accuracy_automata_skab.pdf
+     -> Accuracy parametre duyarlılık grafiği
+     -> Konum: c:\Users\gokse\Deep-Learning-Project\reports\figures\sensitivity_accuracy_automata_skab.*
+
+VAR: sensitivity_f1_automata_skab.png
+VAR: sensitivity_f1_automata_skab.pdf
+     -> F1 parametre duyarlılık grafiği
+     -> Konum: c:\Users\gokse\Deep-Learning-Project\reports\figures\sensitivity_f1_automata_skab.*
+
+VAR: sensitivity_precision_automata_skab.png
+VAR: sensitivity_precision_automata_skab.pdf
+     -> Precision parametre duyarlılık grafiği
+     -> Konum: c:\Users\gokse\Deep-Learning-Project\reports\figures\sensitivity_precision_automata_skab.*
+
+VAR: sensitivity_recall_automata_skab.png
+VAR: sensitivity_recall_automata_skab.pdf
+     -> Recall parametre duyarlılık grafiği
+     -> Konum: c:\Users\gokse\Deep-Learning-Project\reports\figures\sensitivity_recall_automata_skab.*
+
+VAR: state_diagram_automata_skab
+     -> Otomata durum diyagramı (Graphviz formatında)
+     -> Konum: c:\Users\gokse\Deep-Learning-Project\reports\figures\state_diagram_automata_skab
+
+3. VERİ SETLERİ (data/raw/)
+--------------------------------------------------------------------------------
+VAR: data/raw/SKAB-master/
+     -> SKAB veri seti (valve1 ve valve2 klasörleri)
+     -> Konum: c:\Users\gokse\Deep-Learning-Project\data\raw\SKAB-master\
+
+VAR: data/raw/BATADAL_dataset04.csv
+     -> BATADAL veri seti
+     -> Konum: c:\Users\gokse\Deep-Learning-Project\data\raw\BATADAL_dataset04.csv
+
+4. KAYNAK KOD DOSYALARI (src/)
+--------------------------------------------------------------------------------
+VAR: src/reporting/
+     -> report_manager.py (Event-Driven Reporting)
+     -> statistical_analyzer.py (Wilcoxon/McNemar Tests)
+     -> explainability_engine.py (JSON Output + Counterfactual Analysis)
+
+VAR: src/visualization/
+     -> visualization_manager.py (Matplotlib/Seaborn Visualizations)
+
+VAR: src/orchestration/orchestrator.py (Updated - Faz 5 & 6 Entegrasyonu)
+
+================================================================================
+ÖZET
+================================================================================
+Tüm dosyalar diskte mevcuttur ve doğru konumlarda yer alıyor.
+
+Raporlar:
+- final_academic_report.txt (Tüm fazların özet raporu)
+- reports/experiment_report.json (Ham metrik verileri)
+- reports/statistical_comparison.json (İstatistiksel test sonuçları)
+
+Görselleştirmeler:
+- reports/figures/transition_heatmap_automata_skab.png
+- reports/figures/sensitivity_*.png/pdf (Parametre duyarlılık grafikleri)
+- reports/figures/state_diagram_automata_skab
+
+Veri Setleri:
+- data/raw/SKAB-master/ (valve1 ve valve2)
+- data/raw/BATADAL_dataset04.csv
+
+================================================================================

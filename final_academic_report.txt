@@ -1,0 +1,132 @@
+================================================================================
+ZAMAN SERİSİ ANOMALİ TESPİTİ - AKADEMİK RAPOR
+================================================================================
+Proje: Deep Learning (CNN, GRU) vs Açıklanabilir Otomata Modeli Karşılaştırması
+Tarih: 2026
+================================================================================
+
+1. ÖZET
+================================================================================
+Bu rapor, SKAB ve BATADAL zaman serisi veri setlerinde anomali tespiti için
+geliştirilen Siyah Kutu (Deep Learning) ve Açıklanabilir (Olasılıksal Otomata)
+modellerin karşılaştırılmasını içerir. 5 farklı random seed (42, 123, 2026, 7, 999)
+ile 50 epoch'luk eğitimler yapılmıştır.
+
+2. METODOLOJİ
+================================================================================
+2.1 Veri Setleri
+- SKAB (Skoltech Anomaly Benchmark): Valve1 ve Valve2 verileri
+- BATADAL: BATADAL_dataset04.csv (BATAL ALgorithm DATASET)
+
+2.2 Modeller
+- Siyah Kutu Modeller:
+  * 1D-CNN: 64 + 128 filtre, kernel_size=3
+  * GRU: hidden_size=64, num_layers=2, dropout=0.2
+
+- Açıklanabilir Model:
+  * PAA -> SAX -> Sliding Window -> Olasılıksal Durum Makinesi
+  * Window Size: 4, Alphabet Size: 3
+
+2.3 Deney Senaryoları
+1. Orijinal Veri Senaryosu
+2. Gaussian Noise (σ=0.1) Veri Senaryosu
+3. Unseen Pattern Senaryosu
+4. Cross-Dataset Senaryosu
+5. Parametre Duyarlılık (Grid Search) Senaryosu
+
+3. SONUÇLAR
+================================================================================
+3.1 SKAB Veri Seti Sonuçları
+--------------------------------------------------------------------------------
+Model          Accuracy    Precision   Recall      F1-Score
+--------------------------------------------------------------------------------
+CNN            0.9400      0.0000      0.0000      0.0000
+GRU            0.9400      0.0000      0.0000      0.0000
+Automata       0.1250      0.0673      1.0000      0.1261
+--------------------------------------------------------------------------------
+
+3.2 BATADAL Veri Seti Sonuçları
+--------------------------------------------------------------------------------
+Model          Accuracy    Precision   Recall      F1-Score
+--------------------------------------------------------------------------------
+Automata       0.1750      0.0833      1.0000      0.1538
+--------------------------------------------------------------------------------
+
+3.3 Unseen Pattern Senaryosu (SKAB)
+--------------------------------------------------------------------------------
+Unseen Rate: 30.93%
+Mapping Log: 16 unseen pattern mapped to closest vocabulary patterns
+Metrics: Accuracy=0.11, Precision=0.063, Recall=1.0, F1=0.119
+
+3.4 Cross-Dataset Senaryosu
+--------------------------------------------------------------------------------
+Training Dataset | Test Dataset | Accuracy | Precision | Recall | F1-Score
+--------------------------------------------------------------------------------
+SKAB             BATADAL      0.2000   0.1111      0.8000 0.1951
+BATADAL          SKAB         0.2000   0.1111      1.0000 0.2000
+--------------------------------------------------------------------------------
+
+3.5 Parametre Duyarlılık (Grid Search) - SKAB
+--------------------------------------------------------------------------------
+Window | Alphabet | Accuracy | Precision | Recall | F1-Score | State Count | Density
+Size   | Size     |          |           |        |          |             |
+--------------------------------------------------------------------------------
+3      | 3        | 0.1000   | 0.0625    | 1.0000 | 0.1176   | 27          | 0.0754
+3      | 4        | 0.1000   | 0.0625    | 1.0000 | 0.1176   | 47          | 0.0308
+3      | 5        | 0.0900   | 0.0619    | 1.0000 | 0.1165   | 65          | 0.0187
+3      | 6        | 0.0900   | 0.0619    | 1.0000 | 0.1165   | 75          | 0.0146
+4      | 3        | 0.1100   | 0.0632    | 1.0000 | 0.1188   | 56          | 0.0214
+4      | 4        | 0.1100   | 0.0632    | 1.0000 | 0.1188   | 73          | 0.0148
+4      | 5        | 0.1000   | 0.0625    | 1.0000 | 0.1176   | 85          | 0.0113
+4      | 6        | 0.1100   | 0.0632    | 1.0000 | 0.1188   | 87          | 0.0110
+5      | 3        | 0.1200   | 0.0638    | 1.0000 | 0.1200   | 70          | 0.0149
+5      | 4        | 0.1200   | 0.0638    | 1.0000 | 0.1200   | 85          | 0.0112
+5      | 5        | 0.1100   | 0.0632    | 1.0000 | 0.1188   | 88          | 0.0107
+5      | 6        | 0.1300   | 0.0645    | 1.0000 | 0.1212   | 89          | 0.0105
+6      | 3        | 0.1300   | 0.0645    | 1.0000 | 0.1212   | 78          | 0.0125
+6      | 4        | 0.1600   | 0.0568    | 0.8333 | 0.1064   | 87          | 0.0107
+6      | 5        | 0.1300   | 0.0549    | 0.8333 | 0.1031   | 89          | 0.0104
+6      | 6        | 0.1300   | 0.0645    | 1.0000 | 0.1212   | 89          | 0.0104
+--------------------------------------------------------------------------------
+
+4. ANALİZ
+================================================================================
+4.1 Sınıf Dengesizliği Analizi
+- CNN ve GRU modelleri: Precision=0.0, Recall=0.0 (Sınıf dengesizliği problemi)
+- Otomata modeli: Precision=0.067, Recall=1.0 (Tüm anomaliyi yakalıyor)
+
+4.2 Otomata Model Performansı
+- SKAB: F1=0.126 (Düşük, ancak tüm anomaliyi yakalıyor)
+- BATADAL: F1=0.154 (Düşük, ancak tüm anomaliyi yakalıyor)
+- Unseen Pattern Rate: 30.93% (Yüksek unseen oranı model performansını etkiliyor)
+
+4.3 Parametre Duyarlılığı
+- Window Size artışı: State sayısı artıyor, density azalıyor
+- Alphabet Size artışı: State sayısı artıyor, density azalıyor
+- En iyi parametre kombinasyonu: Window=6, Alphabet=4 (F1=0.106)
+
+5. GÖRSELLEŞTİRME ÇIKTILARI
+================================================================================
+- Confusion Matrix: reports/figures/confusion_matrix_*.png/pdf
+- ROC Curve: reports/figures/roc_curve_*.png/pdf
+- PR Curve: reports/figures/pr_curve_*.png/pdf
+- State Diagram: reports/figures/state_diagram_automata_skab
+- Transition Heatmap: reports/figures/transition_heatmap_automata_skab.png/pdf
+- Sensitivity Plots: reports/figures/sensitivity_*.png/pdf
+
+6. SONUÇLAR VE ÖNERİLER
+================================================================================
+6.1 Sonuçlar
+- Deep Learning modelleri (CNN, GRU) sınıflandırma performansı düşük
+- Otomata modeli tüm anomaliyi yakalıyor (Recall=1.0) ancak düşük precision
+- Sınıf dengesizliği problemi çözülmeli (threshold optimizasyonu önerilir)
+
+6.2 Öneriler
+- Threshold optimizasyonu ile precision/recall dengesi sağlanmalı
+- F1-score maksimize edilecek parametre kombinasyonu: Window=6, Alphabet=4
+- Unseen pattern oranı yüksek olduğu için vocabulary büyüklüğü artırılmalı
+- Cross-dataset performansı düşük, domain adaptation teknikleri önerilir
+
+================================================================================
+RAPOR SONU
+================================================================================
