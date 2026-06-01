@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from matplotlib.patches import Circle  # 🚨 PYLANCE ÇÖZÜMÜ: Resmi adresten import ettik
 from sklearn.metrics import confusion_matrix, roc_curve, auc, precision_recall_curve
 
 class VisualizationManager:
@@ -37,7 +38,6 @@ class VisualizationManager:
         y_true_arr = np.array(y_true)
         y_pred_arr = np.array(y_pred)
         
-        # Eğer veri hep tek sınıftan ibaretse koruma kalkanı
         if len(np.unique(y_true_arr)) < 2:
             y_true_arr = np.array([0, 1, 0, 1] * (len(y_true_arr) // 4 + 1))[:len(y_true_arr)]
             y_pred_arr = np.array([0.1, 0.9, 0.2, 0.8] * (len(y_pred_arr) // 4 + 1))[:len(y_pred_arr)]
@@ -74,18 +74,14 @@ class VisualizationManager:
 
     def plot_transition_heatmap(self, matrix, states, filename: str = "heatmap_automata.png"):
         """Otomatanın durum geçiş olasılık matrisini ısı haritası olarak çizer."""
-        # Kanvas boyutunu büyüterek verilere nefes aldırıyoruz
         plt.figure(figsize=(14, 11)) 
         
-        # Sıkışıklığı ve metin karmaşasını önlemek için annot=False yaptık (rakamları gizledik)
-        # Bu sayede sadece renk yoğunluklarından kalıplar okunabilecek
         sns.heatmap(matrix, annot=False, cmap="YlGnBu", xticklabels=states, yticklabels=states)
         
         plt.title("Automata State Transition Probability Heatmap", fontsize=14, fontweight='bold', pad=15)
         plt.ylabel("Mevcut Durum (From)", fontsize=12)
         plt.xlabel("Sonraki Durum (To)", fontsize=12)
         
-        # Eksen yazı boyutlarını ciddi oranda küçülttük ve dikey hizaladık
         plt.xticks(rotation=90, fontsize=6)
         plt.yticks(rotation=0, fontsize=6)
         
@@ -95,22 +91,18 @@ class VisualizationManager:
 
     def plot_automata_state_diagram(self, states, transition_matrix, filename: str = "automata_state_diagram.png"):
         """Matplotlib koordinat düzlemi üzerinde dairesel ağaç grafiği olarak çizer."""
-        # Görsel alanı genişletiyoruz
         plt.figure(figsize=(11, 11)) 
         num_states = len(states)
         angles = np.linspace(0, 2 * np.pi, num_states, endpoint=False)
         
         coords = {states[i]: (np.cos(angles[i]), np.sin(angles[i])) for i in range(num_states)}
         
-        # Düğümleri (mavi daireleri) çok daha küçük çizerek (0.05) üst üste binmelerini engelliyoruz
+        # Düğümleri resmi Circle sınıfıyla çiziyoruz
         for state, (x, y) in coords.items():
-            circle = plt.Circle((x, y), 0.05, color='skyblue', ec='black', zorder=2)
+            circle = Circle((x, y), 0.05, color='skyblue', ec='black', zorder=2) # 🚨 Doğrudan adresten çağırdık
             plt.gca().add_patch(circle)
-            # Metin boyutunu 6 yaparak dairelerin içine tam sığmasını sağladık
             plt.text(x, y, state, ha='center', va='center', fontsize=6, fontweight='bold', zorder=3)
         
-        # Geçiş oku eşiğini %25'ten %45'e (0.45) yükselttik.
-        # Böylece örümcek ağı gibi her şeyi çizmek yerine sadece çok güçlü olan ana akışları gösterecek
         for i, from_state in enumerate(states):
             for j, to_state in enumerate(states):
                 try:
@@ -123,7 +115,6 @@ class VisualizationManager:
                     x2, y2 = coords[to_state]
                     
                     if from_state != to_state:
-                        # Okları inceltip şeffaflığını (alpha) ayarladık
                         plt.annotate("", xy=(x2, y2), xytext=(x1, y1),
                                      arrowprops=dict(arrowstyle="->", color="coral", alpha=0.4, lw=1.0), zorder=1)
         

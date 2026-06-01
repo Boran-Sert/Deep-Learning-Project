@@ -1,0 +1,31 @@
+{
+  "tasks": {
+    "task-1779537871932-eiyiz9": {
+      "taskId": "task-1779537871932-eiyiz9",
+      "type": "implementation",
+      "description": "plan.md dosyasındaki FAZ 1 (ConfigurationManager, Altyapı) ve FAZ 2 (Data Pipeline, DataLoader) bileşenlerinin src klasöründe halihazırda yazılıp yazılmadığını kontrol et. Eksik olan dosyaları kurallara uygun şekilde taslak olarak oluştur.",
+      "priority": "normal",
+      "status": "pending",
+      "progress": 0,
+      "assignedTo": [],
+      "tags": [],
+      "createdAt": "2026-05-23T12:04:31.932Z",
+      "startedAt": null,
+      "completedAt": null
+    },
+    "task-1779538173778-4fm4sm": {
+      "taskId": "task-1779538173778-4fm4sm",
+      "type": "implementation",
+      "description": "plan.md analizi ve eksik altyapının kodlanması",
+      "priority": "normal",
+      "status": "pending",
+      "progress": 0,
+      "assignedTo": [],
+      "tags": [],
+      "createdAt": "2026-05-23T12:09:33.778Z",
+      "startedAt": null,
+      "completedAt": null
+    }
+  },
+  "version": "3.0.0"
+}

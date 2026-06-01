@@ -137,8 +137,7 @@ class DeepLearningAdapter(IAnomalyDetector):
 
                 print(
                     f"Epoch {epoch + 1}/{self.epochs} - "
-                    f"Train Loss: {train_loss:.4f} - "
-                    f"Val Loss: {val_loss:.4f}"
+                    f"Train Loss: {train_loss:.4e} - Val Loss: {val_loss:.4e}"
                 )
 
                 # Early Stopping
