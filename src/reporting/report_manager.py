@@ -23,8 +23,8 @@ from src.core.config_manager import ConfigurationManager
 @dataclass
 class MetricStats:
     """Statistics for a single metric across multiple runs."""
-    mean: float
-    std: float
+    mean: float = 0.0
+    std: float = 0.0
     values: List[float] = field(default_factory=list)
 
 
@@ -67,7 +67,7 @@ class ReportManager:
 
     def _on_evaluation_completed(self, event: EvaluationCompletedEvent) -> None:
         """Handle EvaluationCompletedEvent - record metrics."""
-        model_key = f"{event.model_name}_{event.dataset_name}"
+        model_key = f"{event.model_name}_{event.train_dataset}"
         
         # Extract metrics
         for metric_name in ["accuracy", "precision", "recall", "f1"]:

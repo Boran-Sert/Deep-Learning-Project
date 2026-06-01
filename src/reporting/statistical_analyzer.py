@@ -45,7 +45,7 @@ class StatisticalAnalyzer:
             "test": "wilcoxon",
             "statistic": float(stat),
             "p_value": float(p_value),
-            "significant": p_value < self.alpha,
+            "significant": str(p_value < self.alpha),
             "alpha": self.alpha,
         }
 
@@ -94,7 +94,7 @@ class StatisticalAnalyzer:
                 "test": "mcnemar",
                 "statistic": 0.0,
                 "p_value": 1.0,
-                "significant": False,
+                "significant": "False",
                 "alpha": self.alpha,
                 "contingency_table": {"a": a, "b": b, "c": c, "d": d},
             }
@@ -107,7 +107,7 @@ class StatisticalAnalyzer:
             "test": "mcnemar",
             "statistic": float(stat),
             "p_value": float(p_value),
-            "significant": p_value < self.alpha,
+            "significant": str(p_value < self.alpha),
             "alpha": self.alpha,
             "contingency_table": {"a": a, "b": b, "c": c, "d": d},
         }
@@ -207,8 +207,28 @@ class StatisticalAnalyzer:
             lines.append(f"  Test: {test_result['test']}")
             lines.append(f"  Statistic: {test_result['statistic']:.4f}")
             lines.append(f"  P-value: {test_result['p_value']:.4f}")
+            significant = str(test_result['significant'])
             lines.append(
-                f"  Significant at α={test_result['alpha']}: {'Yes' if test_result['significant'] else 'No'}"
+                f"  Significant at α={test_result['alpha']}: {'Yes' if significant == 'True' else 'No'}"
             )
         
         return "\n".join(lines)
+
+
+def convert_to_serializable(obj):
+    """
+    Convert numpy types to standard Python types for JSON serialization.
+    """
+    if isinstance(obj, dict):
+        return {k: convert_to_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_to_serializable(item) for item in obj]
+    elif isinstance(obj, (np.integer, np.int64, np.int32)):
+        return int(obj)
+    elif isinstance(obj, (np.floating, np.float64, np.float32)):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, (np.bool_, bool)):
+        return bool(obj)
+    return obj

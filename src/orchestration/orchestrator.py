@@ -3,7 +3,7 @@ import json
 import pandas as pd
 import numpy as np
 from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
-from typing import Optional
+from typing import Optional, Dict, List
 
 from src.core.config_manager import ConfigurationManager
 from src.core.runtime_logger import RuntimeLogger
@@ -22,7 +22,7 @@ from src.orchestration.events import (
     SensitivityAnalysisEvent,
 )
 from src.reporting.report_manager import ReportManager
-from src.reporting.statistical_analyzer import StatisticalAnalyzer
+from src.reporting.statistical_analyzer import StatisticalAnalyzer, convert_to_serializable
 from src.reporting.explainability_engine import ExplainabilityEngine, CounterfactualAnalyzer
 from src.visualization.visualization_manager import VisualizationManager
 
@@ -578,8 +578,8 @@ class ExperimentOrchestrator:
             print("=" * 60)
             print(self.statistical_analyzer.format_test_results(comparison_results))
             
-            # Save comparison results
+            # Save comparison results (convert numpy types to Python types first)
             comparison_path = os.path.join("reports", "statistical_comparison.json")
             with open(comparison_path, "w", encoding="utf-8") as f:
-                json.dump(comparison_results, f, indent=2)
+                json.dump(convert_to_serializable(comparison_results), f, indent=2)
             print(f"\nStatistical comparison saved to: {comparison_path}")

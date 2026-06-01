@@ -1,0 +1,546 @@
+{
+  "summary": {
+    "models_seen": [
+      "cnn",
+      "automata",
+      "gru"
+    ],
+    "seeds_seen": [
+      42
+    ],
+    "folds_seen": [
+      0,
+      1
+    ]
+  },
+  "metrics_statistics": {
+    "cnn_skab": {
+      "accuracy": {
+        "mean": 0.85,
+        "std": 0.0
+      },
+      "precision": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "recall": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "f1": {
+        "mean": 0.0,
+        "std": 0.0
+      }
+    },
+    "gru_skab": {
+      "accuracy": {
+        "mean": 0.85,
+        "std": 0.0
+      },
+      "precision": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "recall": {
+        "mean": 0.0,
+        "std": 0.0
+      },
+      "f1": {
+        "mean": 0.0,
+        "std": 0.0
+      }
+    },
+    "automata_skab": {
+      "accuracy": {
+        "mean": 0.202,
+        "std": 0.05035871324805668
+      },
+      "precision": {
+        "mean": 0.15903508771929825,
+        "std": 0.02172764255293178
+      },
+      "recall": {
+        "mean": 0.96,
+        "std": 0.05333333333333332
+      },
+      "f1": {
+        "mean": 0.27249795249795244,
+        "std": 0.032943727410644746
+      }
+    },
+    "automata_batadal": {
+      "accuracy": {
+        "mean": 0.3,
+        "std": 0.0
+      },
+      "precision": {
+        "mean": 0.2,
+        "std": 0.0
+      },
+      "recall": {
+        "mean": 1.0,
+        "std": 0.0
+      },
+      "f1": {
+        "mean": 0.3333333333333333,
+        "std": 0.0
+      }
+    }
+  },
+  "table5_format": [
+    {
+      "Model": "cnn",
+      "Dataset": "skab",
+      "Seeds": 1,
+      "Folds": 2,
+      "accuracy_mean": 0.85,
+      "accuracy_std": 0.0,
+      "precision_mean": 0.0,
+      "precision_std": 0.0,
+      "recall_mean": 0.0,
+      "recall_std": 0.0,
+      "f1_mean": 0.0,
+      "f1_std": 0.0
+    },
+    {
+      "Model": "gru",
+      "Dataset": "skab",
+      "Seeds": 1,
+      "Folds": 2,
+      "accuracy_mean": 0.85,
+      "accuracy_std": 0.0,
+      "precision_mean": 0.0,
+      "precision_std": 0.0,
+      "recall_mean": 0.0,
+      "recall_std": 0.0,
+      "f1_mean": 0.0,
+      "f1_std": 0.0
+    },
+    {
+      "Model": "automata",
+      "Dataset": "skab",
+      "Seeds": 1,
+      "Folds": 2,
+      "accuracy_mean": 0.202,
+      "accuracy_std": 0.05035871324805668,
+      "precision_mean": 0.15903508771929825,
+      "precision_std": 0.02172764255293178,
+      "recall_mean": 0.96,
+      "recall_std": 0.05333333333333332,
+      "f1_mean": 0.27249795249795244,
+      "f1_std": 0.032943727410644746
+    },
+    {
+      "Model": "automata",
+      "Dataset": "batadal",
+      "Seeds": 1,
+      "Folds": 2,
+      "accuracy_mean": 0.3,
+      "accuracy_std": 0.0,
+      "precision_mean": 0.2,
+      "precision_std": 0.0,
+      "recall_mean": 1.0,
+      "recall_std": 0.0,
+      "f1_mean": 0.3333333333333333,
+      "f1_std": 0.0
+    }
+  ],
+  "training_times": {},
+  "automata_decisions": [
+    {
+      "scenario": "unseen_pattern",
+      "unseen_rate": 0.3402061855670103,
+      "metrics": {
+        "accuracy": 0.19,
+        "precision": 0.15625,
+        "recall": 1.0,
+        "f1": 0.2702702702702703
+      },
+      "fold_idx": 0,
+      "mapping_log": [
+        {
+          "unseen_pattern": "bbcb",
+          "mapped_to": "bbbb",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "bbab",
+          "mapped_to": "bbbb",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "bbac",
+          "mapped_to": "bbbc",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "caac",
+          "mapped_to": "caab",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "bacb",
+          "mapped_to": "baab",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "cbba",
+          "mapped_to": "cbbc",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "aaca",
+          "mapped_to": "caca",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "bbba",
+          "mapped_to": "bbbb",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "cacb",
+          "mapped_to": "caca",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "acbb",
+          "mapped_to": "abbb",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "baba",
+          "mapped_to": "caba",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "baca",
+          "mapped_to": "bbca",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "cbaa",
+          "mapped_to": "caaa",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "acbc",
+          "mapped_to": "aabc",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "ccac",
+          "mapped_to": "bcac",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "bcba",
+          "mapped_to": "bcaa",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "acab",
+          "mapped_to": "acaa",
+          "edit_distance": 1
+        }
+      ]
+    },
+    {
+      "scenario": "unseen_pattern",
+      "unseen_rate": 0.36082474226804123,
+      "metrics": {
+        "accuracy": 0.16,
+        "precision": 0.1368421052631579,
+        "recall": 0.8666666666666667,
+        "f1": 0.23636363636363636
+      },
+      "fold_idx": 1,
+      "mapping_log": [
+        {
+          "unseen_pattern": "cabb",
+          "mapped_to": "ccbb",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "bbcb",
+          "mapped_to": "cbcb",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "caab",
+          "mapped_to": "caac",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "abca",
+          "mapped_to": "acca",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "cabc",
+          "mapped_to": "cacc",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "ccaa",
+          "mapped_to": "ccac",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "abcc",
+          "mapped_to": "accc",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "bcab",
+          "mapped_to": "bcac",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "abbb",
+          "mapped_to": "acbb",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "ccca",
+          "mapped_to": "cccb",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "cbac",
+          "mapped_to": "ccac",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "acbc",
+          "mapped_to": "accc",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "abbc",
+          "mapped_to": "cbbc",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "abcb",
+          "mapped_to": "accb",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "aabc",
+          "mapped_to": "aacc",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "bccb",
+          "mapped_to": "bccc",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "cccc",
+          "mapped_to": "bccc",
+          "edit_distance": 1
+        },
+        {
+          "unseen_pattern": "cbcc",
+          "mapped_to": "cacc",
+          "edit_distance": 1
+        }
+      ]
+    }
+  ],
+  "sensitivity_results": [
+    {
+      "window_size": 3,
+      "alphabet_size": 3,
+      "metrics": {
+        "accuracy": 0.19,
+        "precision": 0.15625,
+        "recall": 1.0,
+        "f1": 0.2702702702702703
+      },
+      "state_count": 25,
+      "transition_density": 0.0736
+    },
+    {
+      "window_size": 3,
+      "alphabet_size": 4,
+      "metrics": {
+        "accuracy": 0.19,
+        "precision": 0.15625,
+        "recall": 1.0,
+        "f1": 0.2702702702702703
+      },
+      "state_count": 45,
+      "transition_density": 0.02962962962962963
+    },
+    {
+      "window_size": 3,
+      "alphabet_size": 5,
+      "metrics": {
+        "accuracy": 0.18,
+        "precision": 0.14736842105263157,
+        "recall": 0.9333333333333333,
+        "f1": 0.2545454545454545
+      },
+      "state_count": 59,
+      "transition_density": 0.018960068945705257
+    },
+    {
+      "window_size": 3,
+      "alphabet_size": 6,
+      "metrics": {
+        "accuracy": 0.18,
+        "precision": 0.14736842105263157,
+        "recall": 0.9333333333333333,
+        "f1": 0.2545454545454545
+      },
+      "state_count": 70,
+      "transition_density": 0.014489795918367347
+    },
+    {
+      "window_size": 4,
+      "alphabet_size": 3,
+      "metrics": {
+        "accuracy": 0.19,
+        "precision": 0.15625,
+        "recall": 1.0,
+        "f1": 0.2702702702702703
+      },
+      "state_count": 50,
+      "transition_density": 0.0252
+    },
+    {
+      "window_size": 4,
+      "alphabet_size": 4,
+      "metrics": {
+        "accuracy": 0.19,
+        "precision": 0.15625,
+        "recall": 1.0,
+        "f1": 0.2702702702702703
+      },
+      "state_count": 68,
+      "transition_density": 0.01384083044982699
+    },
+    {
+      "window_size": 4,
+      "alphabet_size": 5,
+      "metrics": {
+        "accuracy": 0.2,
+        "precision": 0.15053763440860216,
+        "recall": 0.9333333333333333,
+        "f1": 0.25925925925925924
+      },
+      "state_count": 76,
+      "transition_density": 0.012119113573407203
+    },
+    {
+      "window_size": 4,
+      "alphabet_size": 6,
+      "metrics": {
+        "accuracy": 0.19,
+        "precision": 0.15625,
+        "recall": 1.0,
+        "f1": 0.2702702702702703
+      },
+      "state_count": 81,
+      "transition_density": 0.010669105319311081
+    },
+    {
+      "window_size": 5,
+      "alphabet_size": 3,
+      "metrics": {
+        "accuracy": 0.18,
+        "precision": 0.13978494623655913,
+        "recall": 0.8666666666666667,
+        "f1": 0.24074074074074073
+      },
+      "state_count": 72,
+      "transition_density": 0.013503086419753086
+    },
+    {
+      "window_size": 5,
+      "alphabet_size": 4,
+      "metrics": {
+        "accuracy": 0.19,
+        "precision": 0.14130434782608695,
+        "recall": 0.8666666666666667,
+        "f1": 0.24299065420560748
+      },
+      "state_count": 75,
+      "transition_density": 0.012088888888888889
+    },
+    {
+      "window_size": 5,
+      "alphabet_size": 5,
+      "metrics": {
+        "accuracy": 0.26,
+        "precision": 0.16091954022988506,
+        "recall": 0.9333333333333333,
+        "f1": 0.27450980392156865
+      },
+      "state_count": 81,
+      "transition_density": 0.010821521109586953
+    },
+    {
+      "window_size": 5,
+      "alphabet_size": 6,
+      "metrics": {
+        "accuracy": 0.2,
+        "precision": 0.14285714285714285,
+        "recall": 0.8666666666666667,
+        "f1": 0.24528301886792453
+      },
+      "state_count": 81,
+      "transition_density": 0.010821521109586953
+    },
+    {
+      "window_size": 6,
+      "alphabet_size": 3,
+      "metrics": {
+        "accuracy": 0.21,
+        "precision": 0.13636363636363635,
+        "recall": 0.8,
+        "f1": 0.23300970873786409
+      },
+      "state_count": 81,
+      "transition_density": 0.010821521109586953
+    },
+    {
+      "window_size": 6,
+      "alphabet_size": 4,
+      "metrics": {
+        "accuracy": 0.24,
+        "precision": 0.14942528735632185,
+        "recall": 0.8666666666666667,
+        "f1": 0.2549019607843137
+      },
+      "state_count": 79,
+      "transition_density": 0.011216151257811249
+    },
+    {
+      "window_size": 6,
+      "alphabet_size": 5,
+      "metrics": {
+        "accuracy": 0.28,
+        "precision": 0.16470588235294117,
+        "recall": 0.9333333333333333,
+        "f1": 0.28
+      },
+      "state_count": 82,
+      "transition_density": 0.010559190957763236
+    },
+    {
+      "window_size": 6,
+      "alphabet_size": 6,
+      "metrics": {
+        "accuracy": 0.21,
+        "precision": 0.15217391304347827,
+        "recall": 0.9333333333333333,
+        "f1": 0.2616822429906542
+      },
+      "state_count": 82,
+      "transition_density": 0.010559190957763236
+    }
+  ]
+}

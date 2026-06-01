@@ -319,40 +319,44 @@ class VisualizationManager:
             top_n: Optional number of most probable transitions to show
             
         Returns:
-            Path to the saved figure
+            Path to the saved figure or empty string if Graphviz not available
         """
         if not GRAPHVIZ_AVAILABLE:
             print("Graphviz is not installed. Skipping state diagram generation.")
             return ""
         
-        # Create graph
-        dot = graphviz.Digraph(
-            f"automata_{model_name}_{dataset_name}",
-            format="png",
-        )
-        
-        # Add nodes
-        for pattern in vocabulary:
-            dot.node(pattern, pattern)
-        
-        # Add edges with probabilities
-        for current, next_states in transition_matrix.items():
-            # Sort by probability and optionally limit
-            sorted_transitions = sorted(
-                next_states.items(), key=lambda x: x[1], reverse=True
+        try:
+            # Create graph
+            dot = graphviz.Digraph(
+                f"automata_{model_name}_{dataset_name}",
+                format="png",
             )
             
-            if top_n:
-                sorted_transitions = sorted_transitions[:top_n]
+            # Add nodes
+            for pattern in vocabulary:
+                dot.node(pattern, pattern)
             
-            for next_state, prob in sorted_transitions:
-                dot.edge(current, next_state, label=f"{prob:.3f}")
-        
-        # Save figure
-        filepath = os.path.join(self.output_dir, f"state_diagram_{model_name}_{dataset_name}")
-        dot.render(filepath, view=False, cleanup=True)
-        
-        return f"{filepath}.png"
+            # Add edges with probabilities
+            for current, next_states in transition_matrix.items():
+                # Sort by probability and optionally limit
+                sorted_transitions = sorted(
+                    next_states.items(), key=lambda x: x[1], reverse=True
+                )
+                
+                if top_n:
+                    sorted_transitions = sorted_transitions[:top_n]
+                
+                for next_state, prob in sorted_transitions:
+                    dot.edge(current, next_state, label=f"{prob:.3f}")
+            
+            # Save figure
+            filepath = os.path.join(self.output_dir, f"state_diagram_{model_name}_{dataset_name}")
+            dot.render(filepath, view=False, cleanup=True)
+            
+            return f"{filepath}.png"
+        except Exception as e:
+            print(f"Graphviz state diagram generation failed: {e}")
+            return ""
 
     def plot_transition_heatmap(
         self,

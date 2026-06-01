@@ -1,0 +1,30 @@
+{
+  "accuracy": {
+    "test": "wilcoxon",
+    "statistic": 0.0,
+    "p_value": 1.0,
+    "significant": "False",
+    "alpha": 0.05
+  },
+  "f1": {
+    "test": "wilcoxon",
+    "statistic": 0.0,
+    "p_value": 1.0,
+    "significant": "False",
+    "alpha": 0.05
+  },
+  "recall": {
+    "test": "wilcoxon",
+    "statistic": 0.0,
+    "p_value": 1.0,
+    "significant": "False",
+    "alpha": 0.05
+  },
+  "precision": {
+    "test": "wilcoxon",
+    "statistic": 0.0,
+    "p_value": 1.0,
+    "significant": "False",
+    "alpha": 0.05
+  }
+}
