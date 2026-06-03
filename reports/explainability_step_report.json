@@ -1,0 +1,119 @@
+[
+    {
+        "time_step": 0,
+        "state": "Unknown",
+        "pattern": "SAX_Word_Step_0",
+        "status": "PROCESSED",
+        "mapped_to": "Automata_State_Graph",
+        "probability": 0.85,
+        "decision": "NORMAL_OPERATION",
+        "explainability": {
+            "confidence_score": "85.00%",
+            "counterfactual": "E\u015fik de\u011fer g\u00fcvenli alanda."
+        }
+    },
+    {
+        "time_step": 0,
+        "state": "Unknown",
+        "pattern": "SAX_Word_Step_0",
+        "status": "PROCESSED",
+        "mapped_to": "Automata_State_Graph",
+        "probability": 0.85,
+        "decision": "NORMAL_OPERATION",
+        "explainability": {
+            "confidence_score": "85.00%",
+            "counterfactual": "E\u015fik de\u011fer g\u00fcvenli alanda."
+        }
+    },
+    {
+        "time_step": 0,
+        "state": "Unknown",
+        "pattern": "SAX_Word_Step_0",
+        "status": "PROCESSED",
+        "mapped_to": "Automata_State_Graph",
+        "probability": 0.85,
+        "decision": "NORMAL_OPERATION",
+        "explainability": {
+            "confidence_score": "85.00%",
+            "counterfactual": "E\u015fik de\u011fer g\u00fcvenli alanda."
+        }
+    },
+    {
+        "time_step": 0,
+        "state": "Unknown",
+        "pattern": "SAX_Word_Step_0",
+        "status": "PROCESSED",
+        "mapped_to": "Automata_State_Graph",
+        "probability": 0.85,
+        "decision": "NORMAL_OPERATION",
+        "explainability": {
+            "confidence_score": "85.00%",
+            "counterfactual": "E\u015fik de\u011fer g\u00fcvenli alanda."
+        }
+    },
+    {
+        "time_step": 0,
+        "state": "Unknown",
+        "pattern": "SAX_Word_Step_0",
+        "status": "PROCESSED",
+        "mapped_to": "Automata_State_Graph",
+        "probability": 0.85,
+        "decision": "NORMAL_OPERATION",
+        "explainability": {
+            "confidence_score": "85.00%",
+            "counterfactual": "E\u015fik de\u011fer g\u00fcvenli alanda."
+        }
+    },
+    {
+        "time_step": 0,
+        "state": "Unknown",
+        "pattern": "SAX_Word_Step_0",
+        "status": "PROCESSED",
+        "mapped_to": "Automata_State_Graph",
+        "probability": 0.85,
+        "decision": "NORMAL_OPERATION",
+        "explainability": {
+            "confidence_score": "85.00%",
+            "counterfactual": "E\u015fik de\u011fer g\u00fcvenli alanda."
+        }
+    },
+    {
+        "time_step": 0,
+        "state": "Unknown",
+        "pattern": "SAX_Word_Step_0",
+        "status": "PROCESSED",
+        "mapped_to": "Automata_State_Graph",
+        "probability": 0.85,
+        "decision": "NORMAL_OPERATION",
+        "explainability": {
+            "confidence_score": "85.00%",
+            "counterfactual": "E\u015fik de\u011fer g\u00fcvenli alanda."
+        }
+    },
+    {
+        "time_step": 0,
+        "state": "Unknown",
+        "pattern": "SAX_Word_Step_0",
+        "status": "PROCESSED",
+        "mapped_to": "Automata_State_Graph",
+        "probability": 0.85,
+        "decision": "NORMAL_OPERATION",
+        "explainability": {
+            "confidence_score": "85.00%",
+            "counterfactual": "E\u015fik de\u011fer g\u00fcvenli alanda."
+        }
+    },
+    {
+        "time_step": 0,
+        "state": "Unknown",
+        "pattern": "SAX_Word_Step_0",
+        "status": "PROCESSED",
+        "mapped_to": "Automata_State_Graph",
+        "probability": 0.85,
+        "decision": "NORMAL_OPERATION",
+        "explainability": {
+            "confidence_score": "85.00%",
+            "counterfactual": "E\u015fik de\u011fer g\u00fcvenli alanda."
+        }
+    }
+]
