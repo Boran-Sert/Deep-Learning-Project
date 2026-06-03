@@ -482,3 +482,8 @@ class ExperimentOrchestrator:
                 )
 
         self.event_bus.publish(SensitivityAnalysisEvent(results=sensitivity_results))
+
+    def run_reporting_and_visualization(self, dataset_name: Optional[str] = None):
+        """Compatibility hook for the final reporting/visualization phase."""
+        _ = dataset_name
+        return None
