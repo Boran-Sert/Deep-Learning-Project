@@ -25,3 +25,6 @@ artifacts/
 *.joblib
 *.pth
 src/data/raw
+
+echo ".claude/" >> .gitignore
+echo ".claude-flow/" >> .gitignore
