@@ -2,62 +2,6 @@
 
 Bu proje, zaman serisi anomali tespiti için Siyah Kutu (Deep Learning - 1D-CNN & GRU) ve Açıklanabilir (Olasılıksal Otomata) modelleri derinlemesine karşılaştırmayı amaçlamaktadır [cite: 8-9, 43-48, 50]. Proje, SOLID ve Nesne Yönelimli Programlama (OOP) prensiplerine sadık kalınarak, tamamen parametrik ve modüler bir pipeline mimarisiyle geliştirilmiştir [cite: 104-105, 108].
 
----
-
-## GELİŞTİRME ORTAMI KURULUMU
-
-Bu proje grup çalışmasına uygun şekilde standartlaştırılmıştır. Çakışmaları ve format farklılıklarını önlemek için aşağıdaki adımları takip ederek geliştirme ortamınızı kurun.
-
-### 1. Virtual Environment (Sanal Ortam) Oluşturma ve Aktifleştirme
-Projeyi klonladıktan sonra bir Python sanal ortamı oluşturun:
-
-**Windows için:**
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
-
-**macOS/Linux için:**
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 2. Bağımlılıkların Yüklenmesi
-```bash
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-### 3. Kod Formatlama ve Linting (Ruff)
-Projede kod formatlayıcı ve linter olarak Ruff kullanılmaktadır. Ayarlar `pyproject.toml` ve `.vscode/settings.json` içinde tanımlıdır. VSCode kullanıyorsanız dosyayı kaydettiğinizde otomatik olarak çalışacaktır. Manuel çalıştırmak için:
-
-```bash
-ruff check .
-ruff format .
-```
-
-### 4. Testleri Çalıştırma
-Projede test yazmak ve çalıştırmak için pytest kullanılmaktadır. GitHub Actions (CI) sürecinden geçebilmesi için testlerin başarılı olması gereklidir:
-
-```bash
-py -3.13 -m pytest tests/ -v
-```
-
-Sistem Doğrulama ve Test Raporu Çıktısı:
-
-```plaintext
-platform win32 -- Python 3.13.13, pytest-9.0.3, pluggy-1.6.0
-rootdir: C:\Users\gokse\OneDrive\Belgeler\GitHub\Deep-Learning-Project
-collected 7 items 
-
-tests\test_automata_components.py ....                                            [ 57%]
-tests\test_environment.py ..                                                      [ 85%]
-tests\test_orchestrator.py .                                                      [100%]
-
-================================================ 7 passed in 10.40s =================================================
-```
-
 Sistemin daha önce karşılaşmadığı görülmemiş örüntüleri (unseen patterns) Levenshtein (Edit Distance) algoritması ile en yakın duruma başarıyla haritalandırdığı birim test seviyesinde matematiksel olarak doğrulanmıştır.
 
 ## PROJE KLASÖR YAPISI
